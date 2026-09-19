@@ -5,7 +5,7 @@
 import { BookOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export default function SiteHeader({ onAbout }: { onAbout: () => void }) {
+export default function SiteHeader() {
   const router = useRouter();
   return (
     <header className="sticky top-0 z-30 border-b border-sky-100 bg-white/90 backdrop-blur">
@@ -16,25 +16,11 @@ export default function SiteHeader({ onAbout }: { onAbout: () => void }) {
             <BookOpen className="h-5 w-5" />
           </span>
           <span className="truncate text-[18px] font-bold tracking-tight sm:text-[20px]" style={{ color: "#16324a" }}>
-            StudyShelf
+            Math Hub
           </span>
         </button>
-        <nav aria-label="Điều hướng chính" className="flex shrink-0 items-center gap-1 sm:gap-2">
-          <button
-            type="button"
-            onClick={() => router.push("/list-document")}
-            className="rounded-lg bg-sky-100 px-3 py-2 text-sm font-semibold text-sky-800 sm:px-4"
-          >
-            Tài liệu
-          </button>
-          <button
-            type="button"
-            onClick={onAbout}
-            className="rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-50 sm:px-4"
-          >
-            Giới thiệu
-          </button>
-        </nav>
+        <div aria-label="Điều hướng chính" className="flex shrink-0 items-center gap-1 sm:gap-2">
+        </div>
       </div>
     </header>
   );

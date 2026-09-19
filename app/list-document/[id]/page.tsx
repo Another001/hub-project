@@ -22,14 +22,14 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
   // const [related, setRelated] = useState<ListDocument[]>([]);
   const [loaded, setLoaded] = useState(false); // đã nạp xong dữ liệu
   const [error, setError] = useState(""); // lỗi gọi API (trống = không lỗi)
-  const [toast, setToast] = useState("");
-  const [toastTimer, setToastTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  // const [toast, setToast] = useState("");
+  // const [toastTimer, setToastTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    if (toastTimer) clearTimeout(toastTimer);
-    setToastTimer(setTimeout(() => setToast(""), 3200));
-  };
+  // const showToast = (msg: string) => {
+  //   setToast(msg);
+  //   if (toastTimer) clearTimeout(toastTimer);
+  //   setToastTimer(setTimeout(() => setToast(""), 3200));
+  // };
 
   // Nạp chi tiết 100% từ Cloudinary (không dữ liệu mẫu).
   // getCloudDocument null = sai id -> màn not-found; throw = lỗi API -> màn lỗi.
@@ -69,7 +69,7 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
   const handleDownload = () => {
     if (!doc) return;
     window.open(toListDownloadUrl(doc.fileUrl), "_blank");
-    showToast(`Đã chuẩn bị tải xuống “${doc.title}”.`);
+  //  showToast(`Đã chuẩn bị tải xuống “${doc.title}”.`);
   };
 
   if (!loaded) return <main className="mx-auto max-w-7xl p-8 text-slate-500">Đang tải...</main>;
@@ -78,7 +78,7 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
   if (error) {
     return (
       <main>
-        <SiteHeader onAbout={() => showToast("StudyShelf là không gian tra cứu tài liệu học tập dành cho bạn.")} />
+        <SiteHeader />
         <section className="mx-auto max-w-2xl px-5 py-24 text-center">
           <div className="soft-card rounded-3xl bg-white p-10">
             <h1 className="font-display mt-2 text-[28px] font-bold text-slate-800">Không tải được tài liệu</h1>
@@ -93,7 +93,7 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
             </div>
           </div>
         </section>
-        <StudyToast message={toast} />
+        <StudyToast message="" />
       </main>
     );
   }
@@ -102,7 +102,7 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
   if (!doc) {
     return (
       <main>
-        <SiteHeader onAbout={() => showToast("StudyShelf là không gian tra cứu tài liệu học tập dành cho bạn.")} />
+        <SiteHeader />
         <section className="mx-auto max-w-2xl px-5 py-24 text-center">
           <div className="soft-card rounded-3xl bg-white p-10">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
@@ -115,7 +115,7 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
             </button>
           </div>
         </section>
-        <StudyToast message={toast} />
+        <StudyToast message="" />
       </main>
     );
   }
@@ -129,7 +129,7 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
 
   return (
     <main className="fade-in">
-      <SiteHeader onAbout={() => showToast("StudyShelf là không gian tra cứu tài liệu học tập dành cho bạn.")} />
+      <SiteHeader />
       <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12">
         {/* Breadcrumb Tài liệu > tên tài liệu */}
         <nav aria-label="Breadcrumb" className="mb-7 flex items-center gap-2 text-sm text-slate-500">
@@ -191,7 +191,7 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
         <StudyPdfViewer fileUrl={doc.fileUrl} title={doc.title} />
 
       </div>
-      <StudyToast message={toast} />
+      <StudyToast message="" />
     </main>
   );
 }

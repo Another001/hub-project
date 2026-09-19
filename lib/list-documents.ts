@@ -31,10 +31,13 @@ export const GRADE_OPTIONS: TagOption[] = [
 ];
 
 // Dropdown Tài liệu ôn thi <-> tag giua-ki/cuoi-ki/tong-hop.
+// Tag đặc biệt VIDEO_TAG: không gửi lên Cloudinary, FE chuyển sang nhánh video YouTube tĩnh.
+export const VIDEO_TAG = "video-bai-giang";
 export const EXAM_OPTIONS: TagOption[] = [
-  { label: "Giữa kì", tag: "giua-ki" },
-  { label: "Cuối kì", tag: "cuoi-ki" },
-  { label: "Tổng hợp", tag: "tong-hop" },
+  { label: "Đề thi", tag: "de-thi" },
+  { label: "Đề cương", tag: "de-cuong" },
+  { label: "Tài liệu bổ sung", tag: "tai-lieu-bo-sung" },
+  { label: "Video bài giảng", tag: VIDEO_TAG },
 ];
 
 // Lọc văn bản client-side trên kết quả API (tên/môn/mô tả/tags).
