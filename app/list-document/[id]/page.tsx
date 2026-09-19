@@ -8,10 +8,9 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ChevronRight, Download, Eye, FileQuestion, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import SiteHeader from "@/components/list-document/SiteHeader";
-import StudyDocCard from "@/components/list-document/StudyDocCard";
 import StudyPdfViewer from "@/components/list-document/StudyPdfViewer";
 import StudyToast from "@/components/list-document/StudyToast";
-import { getCloudDocument, listDocuments } from "@/lib/cloudinary-actions"; // Server Actions: chi tiết + list thật
+import { getCloudDocument } from "@/lib/cloudinary-actions"; // Server Actions: chi tiết + list thật
 import { toListDownloadUrl, type ListDocument } from "@/lib/list-documents";
 
 export default function ListDocumentDetailPage({ params }: { params: { id: string } }) {
@@ -20,7 +19,7 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
   const previewRef = useRef<HTMLSpanElement>(null);
 
   const [doc, setDoc] = useState<ListDocument | null>(null);
-  const [related, setRelated] = useState<ListDocument[]>([]);
+  // const [related, setRelated] = useState<ListDocument[]>([]);
   const [loaded, setLoaded] = useState(false); // đã nạp xong dữ liệu
   const [error, setError] = useState(""); // lỗi gọi API (trống = không lỗi)
   const [toast, setToast] = useState("");
@@ -37,10 +36,10 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
   const load = () => {
     setLoaded(false);
     setError("");
-    const pickRelated = (all: ListDocument[], found: ListDocument) => {
-      const same = all.filter((d) => d.id !== found.id && (d.subject === found.subject || d.type === found.type));
-      setRelated((same.length ? same : all.filter((d) => d.id !== found.id)).slice(0, 3));
-    };
+    // const pickRelated = (all: ListDocument[], found: ListDocument) => {
+    //   const same = all.filter((d) => d.id !== found.id && (d.subject === found.subject || d.type === found.type));
+    //   setRelated((same.length ? same : all.filter((d) => d.id !== found.id)).slice(0, 3));
+    // };
     getCloudDocument(docId)
       .then(async (found) => {
         if (!found) {
@@ -50,9 +49,9 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
         }
         setDoc(found);
         // Lấy list để gợi ý liên quan; lỗi thì thôi, vẫn hiện chi tiết.
-        await listDocuments({})
-          .then(({ docs }) => pickRelated(docs, found))
-          .catch(() => setRelated([]));
+        // await listDocuments({})
+        //   .then(({ docs }) => pickRelated(docs, found))
+        //   .catch(() => setRelated([]));
         setLoaded(true);
       })
       .catch(() => {
@@ -190,7 +189,7 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
         {/* Khung preview PDF thật (neo để nút Xem tài liệu cuộn tới) */}
         <span ref={previewRef} className="block scroll-mt-24" />
         <StudyPdfViewer fileUrl={doc.fileUrl} title={doc.title} />
-        
+
       </div>
       <StudyToast message={toast} />
     </main>
