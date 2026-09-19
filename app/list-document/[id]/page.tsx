@@ -11,7 +11,8 @@ import SiteHeader from "@/components/list-document/SiteHeader";
 import StudyDocCard from "@/components/list-document/StudyDocCard";
 import StudyPdfViewer from "@/components/list-document/StudyPdfViewer";
 import StudyToast from "@/components/list-document/StudyToast";
-import { getListDocuments, toListDownloadUrl, type ListDocument } from "@/lib/list-documents";
+import { getCloudDocument, listDocuments } from "@/lib/cloudinary-actions"; // Server Actions: chi tiết + list thật
+import { getListDocuments, toListDownloadUrl, type ListDocument } from "@/lib/list-documents"; // fallback local
 
 export default function ListDocumentDetailPage({ params }: { params: { id: string } }) {
   const docId = decodeURIComponent(params.id); // Next 14: params là object thường
@@ -30,17 +31,31 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
     setToastTimer(setTimeout(() => setToast(""), 3200));
   };
 
-  // Tìm tài liệu theo id trong dữ liệu mẫu; gợi ý liên quan cùng môn/loại.
+  // Nạp chi tiết: thử Cloudinary server-side trước (đúng file thật),
+  // lỗi (chưa điền key...) thì tìm trong dữ liệu mẫu local.
   useEffect(() => {
-    getListDocuments().then((docs) => {
-      const found = docs.find((d) => d.id === docId) ?? null;
-      setDoc(found);
-      if (found) {
-        const same = docs.filter((d) => d.id !== found.id && (d.subject === found.subject || d.type === found.type));
-        setRelated((same.length ? same : docs.filter((d) => d.id !== found.id)).slice(0, 3));
-      }
-      setLoaded(true);
-    });
+    const pickRelated = (all: ListDocument[], found: ListDocument) => {
+      const same = all.filter((d) => d.id !== found.id && (d.subject === found.subject || d.type === found.type));
+      setRelated((same.length ? same : all.filter((d) => d.id !== found.id)).slice(0, 3));
+    };
+    getCloudDocument(docId)
+      .then(async (found) => {
+        if (!found) throw new Error("not-found-cloud");
+        setDoc(found);
+        // Lấy list để gợi ý liên quan; lỗi thì thôi, vẫn hiện chi tiết.
+        await listDocuments({})
+          .then(({ docs }) => pickRelated(docs, found))
+          .catch(() => setRelated([]));
+        setLoaded(true);
+      })
+      .catch(() => {
+        getListDocuments().then((docs) => {
+          const found = docs.find((d) => d.id === docId) ?? null;
+          setDoc(found);
+          if (found) pickRelated(docs, found);
+          setLoaded(true);
+        });
+      });
   }, [docId]);
 
   // Nút Tải xuống: mở link Cloudinary kèm fl_attachment + báo toast.

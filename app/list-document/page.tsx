@@ -8,15 +8,17 @@ import { Search, SearchX } from "lucide-react";
 import SiteHeader from "@/components/list-document/SiteHeader";
 import StudyDocCard from "@/components/list-document/StudyDocCard";
 import StudyToast from "@/components/list-document/StudyToast";
+import { listDocuments } from "@/lib/cloudinary-actions"; // Server Action: list thật từ Cloudinary (secret ở server)
 import {
   filterListDocuments,
-  getListDocuments,
+  getListDocuments, // fallback: dữ liệu mẫu local khi chưa có key Cloudinary
   uniqueValues,
   type ListDocument,
 } from "@/lib/list-documents";
 
 export default function ListDocumentPage() {
-  const [docs, setDocs] = useState<ListDocument[]>([]); // toàn bộ tài liệu mẫu
+  const [docs, setDocs] = useState<ListDocument[]>([]); // toàn bộ tài liệu
+  const [source, setSource] = useState<"cloudinary" | "local">("local"); // đang dùng nguồn nào (để debug)
   const [q, setQ] = useState(""); // từ khóa tìm kiếm
   const [subject, setSubject] = useState(""); // lọc môn ("": tất cả)
   const [grade, setGrade] = useState(""); // lọc khối/lớp
@@ -24,10 +26,24 @@ export default function ListDocumentPage() {
   const [toast, setToast] = useState(""); // thông báo góc phải dưới
   const [toastTimer, setToastTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
-  // Nạp dữ liệu mẫu 1 lần khi mở trang.
+  // Nạp danh sách 1 lần: thử Cloudinary server-side trước,
+  // lỗi (chưa điền key, chưa bật tag...) thì dùng dữ liệu mẫu local.
   useEffect(() => {
-    getListDocuments().then(setDocs);
+    console.log("gọi thử api")
+    listDocuments({})
+      .then(({ docs }) => {
+        setDocs(docs);
+        setSource("cloudinary");
+      })
+      .catch(() => {
+        getListDocuments().then((d) => {
+          setDocs(d);
+          setSource("local");
+        });
+      });
   }, []);
+
+  console.log(docs)
 
   // Hiện toast 3.2s rồi tự ẩn (đúng mẫu HTML).
   const showToast = (msg: string) => {
@@ -106,7 +122,7 @@ export default function ListDocumentPage() {
           <div>
             <h2 className="font-display text-[24px] font-bold text-slate-800">Khám phá tài liệu</h2>
             <p className="mt-1 text-sm text-slate-500" aria-live="polite">
-              Hiển thị {results.length} / {docs.length} tài liệu
+              Hiển thị {results.length} / {docs.length} tài liệu • Nguồn: {source === "cloudinary" ? "Cloudinary (tag tai-lieu)" : "File mẫu local"}
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
