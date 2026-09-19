@@ -13,7 +13,6 @@ export default function StudyDocCard({ doc }: { doc: ListDocument }) {
 
   return (
     <article className="doc-card soft-card flex h-full flex-col rounded-2xl bg-white p-5">
-      haha
       <button className="flex flex-1 flex-col text-left" type="button" onClick={open}>
         <div className="flex items-start justify-between gap-4">
           <span className="flex h-11 w-10 items-center justify-center rounded-xl bg-red-50 text-red-500">

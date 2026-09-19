@@ -12,7 +12,7 @@ import StudyDocCard from "@/components/list-document/StudyDocCard";
 import StudyPdfViewer from "@/components/list-document/StudyPdfViewer";
 import StudyToast from "@/components/list-document/StudyToast";
 import { getCloudDocument, listDocuments } from "@/lib/cloudinary-actions"; // Server Actions: chi tiết + list thật
-import { getListDocuments, toListDownloadUrl, type ListDocument } from "@/lib/list-documents"; // fallback local
+import { toListDownloadUrl, type ListDocument } from "@/lib/list-documents";
 
 export default function ListDocumentDetailPage({ params }: { params: { id: string } }) {
   const docId = decodeURIComponent(params.id); // Next 14: params là object thường
@@ -22,6 +22,7 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
   const [doc, setDoc] = useState<ListDocument | null>(null);
   const [related, setRelated] = useState<ListDocument[]>([]);
   const [loaded, setLoaded] = useState(false); // đã nạp xong dữ liệu
+  const [error, setError] = useState(""); // lỗi gọi API (trống = không lỗi)
   const [toast, setToast] = useState("");
   const [toastTimer, setToastTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
@@ -31,16 +32,22 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
     setToastTimer(setTimeout(() => setToast(""), 3200));
   };
 
-  // Nạp chi tiết: thử Cloudinary server-side trước (đúng file thật),
-  // lỗi (chưa điền key...) thì tìm trong dữ liệu mẫu local.
-  useEffect(() => {
+  // Nạp chi tiết 100% từ Cloudinary (không dữ liệu mẫu).
+  // getCloudDocument null = sai id -> màn not-found; throw = lỗi API -> màn lỗi.
+  const load = () => {
+    setLoaded(false);
+    setError("");
     const pickRelated = (all: ListDocument[], found: ListDocument) => {
       const same = all.filter((d) => d.id !== found.id && (d.subject === found.subject || d.type === found.type));
       setRelated((same.length ? same : all.filter((d) => d.id !== found.id)).slice(0, 3));
     };
     getCloudDocument(docId)
       .then(async (found) => {
-        if (!found) throw new Error("not-found-cloud");
+        if (!found) {
+          setDoc(null);
+          setLoaded(true);
+          return;
+        }
         setDoc(found);
         // Lấy list để gợi ý liên quan; lỗi thì thôi, vẫn hiện chi tiết.
         await listDocuments({})
@@ -49,13 +56,14 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
         setLoaded(true);
       })
       .catch(() => {
-        getListDocuments().then((docs) => {
-          const found = docs.find((d) => d.id === docId) ?? null;
-          setDoc(found);
-          if (found) pickRelated(docs, found);
-          setLoaded(true);
-        });
+        setError("Không tải được tài liệu. Kiểm tra mạng hoặc cấu hình Cloudinary rồi thử lại.");
+        setLoaded(true);
       });
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docId]);
 
   // Nút Tải xuống: mở link Cloudinary kèm fl_attachment + báo toast.
@@ -66,6 +74,30 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
   };
 
   if (!loaded) return <main className="mx-auto max-w-7xl p-8 text-slate-500">Đang tải...</main>;
+
+  // Lỗi API -> màn lỗi + nút thử lại (không hiện dữ liệu giả).
+  if (error) {
+    return (
+      <main>
+        <SiteHeader onAbout={() => showToast("StudyShelf là không gian tra cứu tài liệu học tập dành cho bạn.")} />
+        <section className="mx-auto max-w-2xl px-5 py-24 text-center">
+          <div className="soft-card rounded-3xl bg-white p-10">
+            <h1 className="font-display mt-2 text-[28px] font-bold text-slate-800">Không tải được tài liệu</h1>
+            <p className="mt-3 text-slate-500">{error}</p>
+            <div className="mt-7 flex justify-center gap-3">
+              <button onClick={load} className="rounded-xl px-5 py-3 font-semibold text-white hover:brightness-95" style={{ background: "#4f9fd1" }} type="button">
+                Thử lại
+              </button>
+              <button onClick={() => router.push("/list-document")} className="rounded-xl border border-sky-200 bg-white px-5 py-3 font-semibold text-sky-700" type="button">
+                Về danh sách
+              </button>
+            </div>
+          </div>
+        </section>
+        <StudyToast message={toast} />
+      </main>
+    );
+  }
 
   // Không thấy id -> màn not-found đúng mẫu.
   if (!doc) {
@@ -116,13 +148,13 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
         {/* Thẻ thông tin chính */}
         <section className="soft-card rounded-3xl bg-white p-6 sm:p-9">
           <div className="flex flex-col gap-7 lg:flex-row lg:items-start lg:justify-between">
-            <div className="flex max-w-3xl gap-5">
+            <div className="flex max-w-3xl gap-4 sm:gap-5">
               <div className="flex h-16 w-14 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-500">
                 <FileText className="h-8 w-8" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="mb-2 text-sm font-semibold text-sky-700">{doc.subject} · {doc.grade} · {doc.type}</div>
-                <h1 className="font-display text-3xl font-semibold leading-tight text-slate-800 sm:text-4xl">{doc.title}</h1>
+                <h1 className="font-display text-2xl font-semibold leading-tight text-slate-800 sm:text-4xl">{doc.title}</h1>
                 <p className="mt-4 leading-7 text-slate-600">{doc.fullDescription}</p>
                 <div className="mt-5 flex flex-wrap gap-2">
                   {doc.tags.map((tag) => (
@@ -131,13 +163,14 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
                 </div>
               </div>
             </div>
+            {/* Mobile: 2 nút chia đều full hàng; sm+ mới co theo nội dung */}
             <div className="flex shrink-0 flex-wrap gap-3">
               {/* Cuộn xuống khung preview */}
-              <button onClick={() => previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} type="button" className="inline-flex items-center gap-2 rounded-xl px-5 py-3 font-semibold text-white transition hover:brightness-95" style={{ background: "#4f9fd1" }}>
+              <button onClick={() => previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} type="button" className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold text-white transition hover:brightness-95 sm:flex-none" style={{ background: "#4f9fd1" }}>
                 <Eye className="h-4 w-4" />
                 <span>Xem tài liệu</span>
               </button>
-              <button onClick={handleDownload} type="button" className="inline-flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-5 py-3 font-semibold text-sky-700 transition hover:bg-sky-100">
+              <button onClick={handleDownload} type="button" className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-5 py-3 font-semibold text-sky-700 transition hover:bg-sky-100 sm:flex-none">
                 <Download className="h-4 w-4" />
                 <span>Tải xuống</span>
               </button>
@@ -157,15 +190,7 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
         {/* Khung preview PDF thật (neo để nút Xem tài liệu cuộn tới) */}
         <span ref={previewRef} className="block scroll-mt-24" />
         <StudyPdfViewer fileUrl={doc.fileUrl} title={doc.title} />
-
-        {/* Tài liệu liên quan */}
-        <section className="mt-12">
-          <p className="text-sm font-semibold text-sky-700">Khám phá thêm</p>
-          <h2 className="font-display mt-1 text-[24px] font-bold text-slate-800">Tài liệu liên quan</h2>
-          <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
-            {related.map((d) => <StudyDocCard key={d.id} doc={d} />)}
-          </div>
-        </section>
+        
       </div>
       <StudyToast message={toast} />
     </main>

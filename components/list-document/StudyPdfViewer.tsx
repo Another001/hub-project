@@ -4,7 +4,7 @@
 // Lỗi tải (sai link Cloudinary, file chưa public) -> hiện nút mở tab mới.
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, FileText, Minus, Plus } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -18,6 +18,18 @@ export default function StudyPdfViewer({ fileUrl, title }: { fileUrl: string; ti
   const [page, setPage] = useState(1); // trang đang xem
   const [zoom, setZoom] = useState(100); // % zoom, mẫu giới hạn 80–130
   const [error, setError] = useState("");
+  // Đo chiều rộng khung chứa để trang PDF co vừa mobile (không vuốt ngang).
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [wrapWidth, setWrapWidth] = useState(0);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const update = () => setWrapWidth(el.clientWidth);
+    update(); // đo ngay lần đầu
+    const ro = new ResizeObserver(update); // xoay màn hình / resize thì đo lại
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   return (
     <section className="soft-card mt-8 overflow-hidden rounded-3xl bg-white">
@@ -49,14 +61,15 @@ export default function StudyPdfViewer({ fileUrl, title }: { fileUrl: string; ti
             </a>
           </div>
         ) : (
-          <div className="mx-auto w-fit max-w-full" style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top center" }}>
+          // Trang PDF rộng đúng bằng khung chứa (nhân zoom), mobile không tràn.
+          <div ref={wrapRef} className="mx-auto w-full max-w-2xl bg-white shadow-xl">
             <Document
               file={fileUrl}
               onLoadSuccess={({ numPages }) => { setNumPages(numPages); setPage(1); }}
               onLoadError={() => setError("Link Cloudinary chưa đúng hoặc file chưa public. Kiểm tra lại Secure URL.")}
               loading={<p className="bg-white p-10 text-slate-500">Đang tải PDF...</p>}
             >
-              <Page pageNumber={page} />
+              <Page pageNumber={page} width={wrapWidth ? Math.floor((wrapWidth * zoom) / 100) : undefined} />
             </Document>
           </div>
         )}

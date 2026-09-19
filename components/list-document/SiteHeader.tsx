@@ -9,28 +9,28 @@ export default function SiteHeader({ onAbout }: { onAbout: () => void }) {
   const router = useRouter();
   return (
     <header className="sticky top-0 z-30 border-b border-sky-100 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:px-8 sm:py-4">
         {/* Click logo -> về danh sách */}
-        <button type="button" onClick={() => router.push("/list-document")} className="flex items-center gap-3 text-left" aria-label="Về danh sách tài liệu">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+        <button type="button" onClick={() => router.push("/list-document")} className="flex min-w-0 items-center gap-2 text-left sm:gap-3" aria-label="Về danh sách tài liệu">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700 sm:h-10 sm:w-10">
             <BookOpen className="h-5 w-5" />
           </span>
-          <span className="text-[20px] font-bold tracking-tight" style={{ color: "#16324a" }}>
+          <span className="truncate text-[18px] font-bold tracking-tight sm:text-[20px]" style={{ color: "#16324a" }}>
             StudyShelf
           </span>
         </button>
-        <nav aria-label="Điều hướng chính" className="flex items-center gap-2">
+        <nav aria-label="Điều hướng chính" className="flex shrink-0 items-center gap-1 sm:gap-2">
           <button
             type="button"
             onClick={() => router.push("/list-document")}
-            className="rounded-lg bg-sky-100 px-4 py-2 text-sm font-semibold text-sky-800"
+            className="rounded-lg bg-sky-100 px-3 py-2 text-sm font-semibold text-sky-800 sm:px-4"
           >
             Tài liệu
           </button>
           <button
             type="button"
             onClick={onAbout}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-50"
+            className="rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-50 sm:px-4"
           >
             Giới thiệu
           </button>

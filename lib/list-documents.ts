@@ -1,12 +1,8 @@
-// Kiểu dữ liệu + hàm lọc cho màn list-document (mẫu StudyShelf).
-// Dữ liệu mẫu nằm ở data/list-documents.json (copy từ file HTML của bạn,
-// thêm fileUrl để preview/tải thật).
-// Sau này muốn lấy từ Cloudinary theo tag thì thay hàm getListDocuments()
-// bằng getDocuments() trong lib/documents.ts (đã làm sẵn ở màn tai-lieu).
+// Kiểu dữ liệu + hằng filter + hàm lọc cho màn list-document.
+// Dữ liệu 100% từ Cloudinary qua Server Actions (lib/cloudinary-actions.ts).
+// KHÔNG còn dữ liệu mẫu local: fetch lỗi thì màn hình báo lỗi, không hiện dữ liệu giả.
 
-import sampleData from "@/data/list-documents.json";
-
-// 1 tài liệu trong thư viện StudyShelf.
+// 1 tài liệu trong thư viện StudyShelf (khớp DTO server trả về).
 export type ListDocument = {
   id: string;
   title: string;
@@ -15,48 +11,46 @@ export type ListDocument = {
   type: string; // Loại: Giáo trình, Bài tập...
   description: string; // Mô tả ngắn (hiện ở thẻ)
   fullDescription: string; // Mô tả dài (hiện ở chi tiết)
-  fileUrl: string; // Link PDF: Cloudinary Secure URL hoặc link demo
+  fileUrl: string; // Link PDF: Secure URL Cloudinary
   fileSize: string; // vd: "4.8 MB"
   pageCount: number;
   uploadedAt: string;
   uploadedBy: string;
-  tags: string[];
+  tags: string[]; // tags Cloudinary (dùng để lọc AND nhiều dropdown)
 };
 
-// Đọc danh sách (hiện tại trả dữ liệu mẫu, bọc async để sau đổi sang fetch Cloudinary không phải sửa màn hình).
-export async function getListDocuments(): Promise<ListDocument[]> {
-  return sampleData as ListDocument[];
-}
+// 1 mục trong dropdown tag: label hiện cho user, tag gửi lên API.
+export type TagOption = { label: string; tag: string };
 
-// Lấy các giá trị duy nhất của 1 trường để đổ vào ô select lọc.
-export function uniqueValues(docs: ListDocument[], field: "subject" | "grade" | "type"): string[] {
-  return Array.from(new Set(docs.map((d) => d[field])));
-}
+// Dropdown Lớp: Lớp 6-9 <-> tag lop-6..lop-9 (tag gắn trên file Cloudinary).
+export const GRADE_OPTIONS: TagOption[] = [
+  { label: "Lớp 6", tag: "lop-6" },
+  { label: "Lớp 7", tag: "lop-7" },
+  { label: "Lớp 8", tag: "lop-8" },
+  { label: "Lớp 9", tag: "lop-9" },
+];
 
-// Lọc client-side: tìm kiếm theo tên/môn/mô tả/tags + 3 bộ lọc.
-export function filterListDocuments(
-  docs: ListDocument[],
-  opts: { q: string; subject: string; grade: string; type: string }
-): ListDocument[] {
-  const q = opts.q.trim().toLowerCase();
-  return docs.filter((d) => {
-    const matchQ =
-      !q ||
-      [d.title, d.subject, d.description, ...d.tags].join(" ").toLowerCase().includes(q);
-    return (
-      matchQ &&
-      (!opts.subject || d.subject === opts.subject) &&
-      (!opts.grade || d.grade === opts.grade) &&
-      (!opts.type || d.type === opts.type)
-    );
-  });
+// Dropdown Tài liệu ôn thi <-> tag giua-ki/cuoi-ki/tong-hop.
+export const EXAM_OPTIONS: TagOption[] = [
+  { label: "Giữa kì", tag: "giua-ki" },
+  { label: "Cuối kì", tag: "cuoi-ki" },
+  { label: "Tổng hợp", tag: "tong-hop" },
+];
+
+// Lọc văn bản client-side trên kết quả API (tên/môn/mô tả/tags).
+export function filterListDocuments(docs: ListDocument[], q: string): ListDocument[] {
+  const query = q.trim().toLowerCase();
+  if (!query) return docs;
+  return docs.filter((d) =>
+    [d.title, d.subject, d.description, ...d.tags].join(" ").toLowerCase().includes(query)
+  );
 }
 
 // Link tải: gắn fl_attachment để trình duyệt download thay vì mở.
-// Chỉ áp dụng cho link Cloudinary, link demo giữ nguyên.
+// Chỉ áp dụng cho link Cloudinary (cả image/upload lẫn raw/upload).
 export function toListDownloadUrl(fileUrl: string): string {
   if (fileUrl.includes("res.cloudinary.com") && !fileUrl.includes("fl_attachment")) {
-    return fileUrl.replace("/raw/upload/", "/raw/upload/fl_attachment/");
+    return fileUrl.replace(/(image|raw|video)\/upload\//, "$1/upload/fl_attachment/");
   }
   return fileUrl;
 }
