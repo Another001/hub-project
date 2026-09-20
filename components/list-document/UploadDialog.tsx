@@ -18,10 +18,8 @@ const MAX_MB = 10;
 export default function UploadDialog({ open, onClose, onNeedUnlock, onUploaded }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
-  const [subject, setSubject] = useState("Toán");
   const [gradeTag, setGradeTag] = useState("");
   const [examTag, setExamTag] = useState("");
-  const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -56,12 +54,10 @@ export default function UploadDialog({ open, onClose, onNeedUnlock, onUploaded }
       const fd = new FormData();
       fd.append("file", file);
       fd.append("title", title.trim());
-      fd.append("subject", subject.trim() || "Chưa phân loại");
       const gradeLabel = GRADE_OPTIONS.find((o) => o.tag === gradeTag)?.label ?? "";
       const typeLabel = examOpts.find((o) => o.tag === examTag)?.label ?? "";
       if (gradeLabel) fd.append("grade", gradeLabel);
       if (typeLabel) fd.append("type", typeLabel);
-      if (description.trim()) fd.append("description", description.trim());
       if (gradeTag) fd.append("tags", gradeTag);
       if (examTag) fd.append("tags", examTag);
 
@@ -79,7 +75,6 @@ export default function UploadDialog({ open, onClose, onNeedUnlock, onUploaded }
       // Reset form
       setFile(null);
       setTitle("");
-      setDescription("");
       onClose();
       onUploaded(id);
     } catch {
@@ -153,31 +148,6 @@ export default function UploadDialog({ open, onClose, onNeedUnlock, onUploaded }
                 ))}
               </select>
             </div>
-          </div>
-
-          <div>
-            <label className="text-sm font-semibold text-slate-600" htmlFor="upload-subject">Môn học</label>
-            <input
-              id="upload-subject"
-              className="mt-2 w-full rounded-xl border border-sky-200 px-4 py-2.5 text-slate-700 outline-none focus:border-sky-400"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              maxLength={100}
-              placeholder="VD: Toán"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-semibold text-slate-600" htmlFor="upload-desc">Mô tả</label>
-            <textarea
-              id="upload-desc"
-              className="mt-2 w-full rounded-xl border border-sky-200 px-4 py-2.5 text-slate-700 outline-none focus:border-sky-400"
-              rows={3}
-              maxLength={2000}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Mô tả ngắn về tài liệu..."
-            />
           </div>
 
           {error ? <p className="text-sm font-medium text-red-600" role="alert">{error}</p> : null}

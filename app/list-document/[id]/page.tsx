@@ -152,9 +152,8 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
                 <FileText className="h-8 w-8" />
               </div>
               <div className="min-w-0">
-                <div className="mb-2 text-sm font-semibold text-sky-700">{doc.subject} · {doc.grade} · {doc.type}</div>
+                <div className="mb-2 text-sm font-semibold text-sky-700">{doc.grade} · {doc.type}</div>
                 <h1 className="font-display break-words text-2xl font-semibold leading-tight text-slate-800 sm:text-4xl">{doc.title}</h1>
-                <p className="mt-4 break-words leading-7 text-slate-600">{doc.fullDescription}</p>
                 <div className="mt-5 flex flex-wrap gap-2">
                   {doc.tags.map((tag) => (
                     <span key={tag} className="rounded-full bg-sky-50 px-3 py-1 text-sm font-medium text-sky-700">{tag}</span>

@@ -23,10 +23,9 @@ export default function StudyDocCard({ doc }: { doc: ListDocument }) {
           </span>
         </div>
         <p className="mt-5 text-sm font-semibold text-sky-700">
-          {doc.subject} · {doc.grade}
+          {doc.grade}
         </p>
         <h3 className="mt-1 break-words text-lg font-bold leading-snug text-slate-800">{doc.title}</h3>
-        <p className="mt-3 line-clamp-2 break-words text-sm leading-6 text-slate-500">{doc.description}</p>
       </button>
       <div className="mt-5 border-t border-sky-50 pt-4 text-xs text-slate-500">
         {doc.pageCount} trang • {doc.fileSize} • Cập nhật {doc.uploadedAt}

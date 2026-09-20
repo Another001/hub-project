@@ -1,5 +1,5 @@
 // POST /api/documents/upload — upload PDF, BẮT BUỘC đã unlock (cookie).
-// FormData: file (PDF <=10MB) + title* + subject + grade + type + description + tags[].
+// FormData: file (PDF <=10MB) + title* + grade + type + tags[].
 // Trả 201 { id, fileUrl, fileSize } để FE chuyển sang detail hoặc reload list.
 import { NextResponse, type NextRequest } from "next/server";
 import "server-only";
@@ -92,13 +92,11 @@ export async function POST(req: NextRequest) {
     return bad("File không phải PDF thật (thiếu chữ ký %PDF).");
   }
 
-  const str = (k: string) => cleanCtx(String(form.get(k) ?? ""), k === "description" ? 2000 : 200);
+  const str = (k: string) => cleanCtx(String(form.get(k) ?? ""), 200);
   const title = str("title");
   if (!title) return bad("Thiếu tiêu đề (field 'title').");
-  const subject = str("subject") || "Chưa phân loại";
   const grade = str("grade") || "Tất cả";
   const type = str("type") || "Tài liệu";
-  const description = str("description");
 
   // Tags: chỉ nhận tag đã định nghĩa (lop-6.., de-thi...), bỏ VIDEO_TAG.
   const rawTags = form.getAll("tags").flatMap((t) => String(t).split(","));
@@ -127,13 +125,13 @@ export async function POST(req: NextRequest) {
           overwrite: false,
           access_mode: "public",
           tags,
+          // KHÔNG thêm tiền tố "custom." ở đây: Cloudinary tự gom key lạ vào
+          // context.custom (gửi "custom.title=" sẽ thành custom.custom.title, web không đọc được).
           context: [
-            `custom.title=${cleanCtx(title, 200)}`,
-            `custom.subject=${cleanCtx(subject, 100)}`,
-            `custom.grade=${cleanCtx(grade, 100)}`,
-            `custom.type=${cleanCtx(type, 100)}`,
-            `custom.description=${cleanCtx(description, 1000)}`,
-            `custom.uploader=Giao vien`,
+            `title=${cleanCtx(title, 200)}`,
+            `grade=${cleanCtx(grade, 100)}`,
+            `type=${cleanCtx(type, 100)}`,
+            `uploader=Giao vien`,
           ].join("|"),
         },
         (err, res) => (err ? reject(err) : resolve(res as never))
