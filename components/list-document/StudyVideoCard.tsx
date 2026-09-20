@@ -30,7 +30,7 @@ export default function StudyVideoCard({ video }: { video: ListVideo }) {
         </span>
       </button>
 
-      <button className="flex flex-1 flex-col text-left" type="button" onClick={open}>
+      <button className="flex min-w-0 flex-1 flex-col text-left" type="button" onClick={open}>
         <div className="mt-4 flex items-start justify-between gap-4">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500">
             <MonitorPlay className="h-5 w-5" />
@@ -40,8 +40,8 @@ export default function StudyVideoCard({ video }: { video: ListVideo }) {
           </span>
         </div>
         <p className="mt-3 text-sm font-semibold text-sky-700">{video.subject}</p>
-        <h3 className="mt-1 text-lg font-bold leading-snug text-slate-800">{video.title}</h3>
-        <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-500">{video.description}</p>
+        <h3 className="mt-1 break-words text-lg font-bold leading-snug text-slate-800">{video.title}</h3>
+        <p className="mt-3 line-clamp-2 break-words text-sm leading-6 text-slate-500">{video.description}</p>
       </button>
 
       <div className="mt-5 border-t border-sky-50 pt-4 text-xs text-slate-500">

@@ -5,12 +5,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Search, SearchX } from "lucide-react";
+import { AlertTriangle, FileUp, Search, SearchX } from "lucide-react";
 import SiteHeader from "@/components/list-document/SiteHeader";
 import StudyDocCard from "@/components/list-document/StudyDocCard";
 import StudyVideoCard from "@/components/list-document/StudyVideoCard";
 import StudyToast from "@/components/list-document/StudyToast";
 import TagDropdown from "@/components/list-document/TagDropdown";
+import UnlockDialog from "@/components/list-document/UnlockDialog";
+import UploadDialog from "@/components/list-document/UploadDialog";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 import { listDocuments } from "@/lib/cloudinary-actions"; // Server Action: list thật từ Cloudinary (secret ở server)
 import {
   EXAM_OPTIONS,
@@ -28,6 +31,11 @@ export default function ListDocumentPage() {
   const [q, setQ] = useState(""); // từ khóa tìm kiếm (lọc client-side)
   const [gradeTag, setGradeTag] = useState(""); // tag lớp: "" | lop-6..lop-9
   const [examTag, setExamTag] = useState(""); // tag kì thi: "" | giua-ki/cuoi-ki/tong-hop
+  const [showUnlock, setShowUnlock] = useState(false); // modal nhập mã
+  const [showUpload, setShowUpload] = useState(false); // modal upload PDF
+  const [reopenUpload, setReopenUpload] = useState(false); // 401 giữa chừng -> unlock xong mở lại upload
+  const [toast, setToast] = useState(""); // thông báo sau upload
+  const { unlocked, checking, refresh, logout } = useAuthStatus();
   // const [toast, setToast] = useState(""); // thông báo góc phải dưới
   // const [toastTimer, setToastTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
@@ -74,9 +82,26 @@ export default function ListDocumentPage() {
     setQ(""); setGradeTag(""); setExamTag("");
   };
 
+  // Bấm "Tải lên PDF": chưa unlock -> mở modal nhập mã trước.
+  const openUpload = () => {
+    if (!unlocked) {
+      setReopenUpload(true);
+      setShowUnlock(true);
+      return;
+    }
+    setShowUpload(true);
+  };
+
+  // Upload xong -> tải lại list theo tag đang chọn + toast.
+  const handleUploaded = () => {
+    load([gradeTag, examTag].filter(Boolean));
+    setToast("Tải lên thành công.");
+    setTimeout(() => setToast(""), 3200);
+  };
+
   return (
     <main className="fade-in">
-      <SiteHeader />
+      <SiteHeader unlocked={unlocked} checking={checking} onUnlockClick={() => setShowUnlock(true)} onLogout={logout} />
 
       {/* Hero: tiêu đề + ô tìm kiếm + thống kê */}
       <section className="hero-glow border-b border-sky-100">
@@ -137,6 +162,10 @@ export default function ListDocumentPage() {
               <TagDropdown label="Lớp" options={GRADE_OPTIONS} value={gradeTag} onChange={setGradeTag} />
             )}
             <TagDropdown label="Loại" options={EXAM_OPTIONS} value={examTag} onChange={setExamTag} />
+            <button type="button" onClick={openUpload} className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95 sm:w-auto" style={{ background: "#4f9fd1" }}>
+              <FileUp className="h-4 w-4" />
+              <span>Tải lên PDF</span>
+            </button>
             {hasFilter ? (
               <button type="button" onClick={resetFilters} className="w-full rounded-xl border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-50 sm:w-auto">
                 Xóa bộ lọc
@@ -194,7 +223,24 @@ export default function ListDocumentPage() {
         )}
       </section>
 
-      <StudyToast message="" />
+      <StudyToast message={toast} />
+      <UnlockDialog
+        open={showUnlock}
+        onClose={() => { setShowUnlock(false); setReopenUpload(false); }}
+        onUnlocked={() => {
+          refresh();
+          if (reopenUpload) {
+            setReopenUpload(false);
+            setShowUpload(true);
+          }
+        }}
+      />
+      <UploadDialog
+        open={showUpload}
+        onClose={() => setShowUpload(false)}
+        onNeedUnlock={() => { setShowUpload(false); setReopenUpload(true); setShowUnlock(true); refresh(); }}
+        onUploaded={handleUploaded}
+      />
     </main>
   );
 }
