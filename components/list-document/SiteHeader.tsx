@@ -3,7 +3,7 @@
 // Logic giữ nguyên: click brand về /list-document, auth (checking/unlocked/logout).
 "use client";
 
-import { BookOpen, LogOut, User } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type Props = {
@@ -27,7 +27,8 @@ export default function SiteHeader({ unlocked, checking, onUnlockClick, onLogout
           aria-label="Về danh sách tài liệu - THCS Lê Văn Tám"
         >
           <span className="brand-mark" aria-hidden="true">
-            <BookOpen className="icon" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-le-van-tam.png" alt="" className="logo" />
           </span>
           <span>THCS LÊ VĂN TÁM</span>
         </button>

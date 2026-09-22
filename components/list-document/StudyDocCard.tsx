@@ -1,8 +1,11 @@
 // Thẻ tài liệu, giao diện theo mẫu thu-vien-toan.html:
 // category TOÁN·LỚP + icon PDF đỏ, tiêu đề, mô tả, meta, actions Xem + download tròn.
+// Preview: ảnh trang đầu PDF (thumbUrl từ Cloudinary, full-width kiểu thẻ video).
+// Không có thumb (PDF raw cũ) hoặc ảnh lỗi -> ẩn preview, giữ icon PDF.
 // Logic giữ nguyên: mọi nút đều sang màn chi tiết /list-document/[id].
 "use client";
 
+import { useState } from "react";
 import { ArrowRight, Download } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { ListDocument } from "@/lib/list-documents";
@@ -10,12 +13,22 @@ import type { ListDocument } from "@/lib/list-documents";
 export default function StudyDocCard({ doc }: { doc: ListDocument }) {
   const router = useRouter();
   const open = () => router.push(`/list-document/${doc.id}`);
+  const [imgOk, setImgOk] = useState(true); // thumb lỗi -> ẩn, fallback icon
+  const showThumb = Boolean(doc.thumbUrl) && imgOk;
 
   const category = doc.grade ? `TOÁN · ${doc.grade}`.toUpperCase() : "TOÁN";
   const meta = doc.pageCount > 0 ? `PDF · ${doc.pageCount} trang · ${doc.fileSize}` : `PDF · ${doc.fileSize}`;
 
   return (
     <article className="card">
+      {/* Preview trang đầu PDF, bấm vào sang chi tiết */}
+      {showThumb ? (
+        <button className="thumb-wrap" type="button" onClick={open} aria-label={`Xem ${doc.title}`} style={{ marginBottom: 14 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={doc.thumbUrl as string} alt={`Trang đầu ${doc.title}`} loading="lazy" onError={() => setImgOk(false)} />
+          <span className="thumb-time">{doc.pageCount > 0 ? `${doc.pageCount} trang` : "PDF"}</span>
+        </button>
+      ) : null}
       <div className="card-head">
         <div className="min-w-0">
           <span className="category">{category}</span>

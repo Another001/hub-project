@@ -114,21 +114,9 @@ export default function ListDocumentPage() {
               </button>
             </form>
           </div>
-          {/* Minh họa nhẹ thay cho ảnh base64 nặng trong file mẫu */}
-          <svg className="hero-art" viewBox="0 0 600 380" role="img" aria-label="Minh họa toán học" aria-hidden="true">
-            <circle cx="300" cy="190" r="150" fill="none" stroke="#008568" strokeWidth="3" opacity="0.25" />
-            <circle cx="300" cy="190" r="110" fill="none" stroke="#008568" strokeWidth="2" opacity="0.35" />
-            <path d="M180 290 L300 90 L420 290 Z" fill="none" stroke="#00664f" strokeWidth="4" opacity="0.35" strokeLinejoin="round" />
-            <rect x="400" y="200" width="110" height="80" rx="8" fill="#008568" opacity="0.16" />
-            <rect x="415" y="215" width="80" height="10" rx="5" fill="#008568" opacity="0.35" />
-            <rect x="415" y="232" width="60" height="10" rx="5" fill="#008568" opacity="0.25" />
-            <rect x="90" y="120" width="90" height="120" rx="8" fill="#fff" stroke="#e3eae8" strokeWidth="2" />
-            <rect x="104" y="138" width="62" height="9" rx="4.5" fill="#ff353b" opacity="0.8" />
-            <rect x="104" y="154" width="62" height="8" rx="4" fill="#64748b" opacity="0.35" />
-            <rect x="104" y="168" width="45" height="8" rx="4" fill="#64748b" opacity="0.25" />
-            <circle cx="140" cy="210" r="16" fill="#edf8f4" stroke="#008568" strokeWidth="2" />
-            <path d="M133 210 h14 M140 203 v14" stroke="#008568" strokeWidth="2" strokeLinecap="round" />
-          </svg>
+          {/* Ảnh minh họa toán học (file bạn xuất lại trong public/) */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="hero-art" src="/hero-illustration.png" alt="Minh họa toán học với compa, ê-ke và sách" />
         </div>
       </section>
 

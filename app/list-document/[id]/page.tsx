@@ -1,11 +1,11 @@
-// MÀN 2: /list-document/[id] — Chi tiết đúng mẫu StudyShelf.
-// Gồm: header, breadcrumb, nút quay lại, thẻ thông tin (icon + môn·lớp·loại +
-// tiêu đề + mô tả + tags + nút Xem/Tải), lưới meta 4 ô, khung preview PDF thật,
-// khối tài liệu liên quan, màn không-tìm-thấy, toast.
+// MÀN 2: /list-document/[id] — Chi tiết, giao diện theo mẫu chi-tiet-tai-lieu.html.
+// Logic giữ nguyên 100%: nạp chi tiết từ Cloudinary (getCloudDocument),
+// màn loading / lỗi + Thử lại / không-tìm-thấy, nút Xem cuộn tới preview,
+// nút Tải xuống mở link fl_attachment tab mới, toast.
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChevronRight, Download, Eye, FileQuestion, FileText } from "lucide-react";
+import { ArrowLeft, Download, Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
 import SiteHeader from "@/components/list-document/SiteHeader";
 import StudyPdfViewer from "@/components/list-document/StudyPdfViewer";
@@ -19,27 +19,14 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
   const previewRef = useRef<HTMLSpanElement>(null);
 
   const [doc, setDoc] = useState<ListDocument | null>(null);
-  // const [related, setRelated] = useState<ListDocument[]>([]);
   const [loaded, setLoaded] = useState(false); // đã nạp xong dữ liệu
   const [error, setError] = useState(""); // lỗi gọi API (trống = không lỗi)
-  // const [toast, setToast] = useState("");
-  // const [toastTimer, setToastTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-
-  // const showToast = (msg: string) => {
-  //   setToast(msg);
-  //   if (toastTimer) clearTimeout(toastTimer);
-  //   setToastTimer(setTimeout(() => setToast(""), 3200));
-  // };
 
   // Nạp chi tiết 100% từ Cloudinary (không dữ liệu mẫu).
   // getCloudDocument null = sai id -> màn not-found; throw = lỗi API -> màn lỗi.
   const load = () => {
     setLoaded(false);
     setError("");
-    // const pickRelated = (all: ListDocument[], found: ListDocument) => {
-    //   const same = all.filter((d) => d.id !== found.id && (d.subject === found.subject || d.type === found.type));
-    //   setRelated((same.length ? same : all.filter((d) => d.id !== found.id)).slice(0, 3));
-    // };
     getCloudDocument(docId)
       .then(async (found) => {
         if (!found) {
@@ -48,10 +35,6 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
           return;
         }
         setDoc(found);
-        // Lấy list để gợi ý liên quan; lỗi thì thôi, vẫn hiện chi tiết.
-        // await listDocuments({})
-        //   .then(({ docs }) => pickRelated(docs, found))
-        //   .catch(() => setRelated([]));
         setLoaded(true);
       })
       .catch(() => {
@@ -69,117 +52,117 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
   const handleDownload = () => {
     if (!doc) return;
     window.open(toListDownloadUrl(doc.fileUrl), "_blank");
-  //  showToast(`Đã chuẩn bị tải xuống “${doc.title}”.`);
   };
 
-  if (!loaded) return <main className="mx-auto max-w-7xl p-8 text-slate-500">Đang tải...</main>;
-
-  // Lỗi API -> màn lỗi + nút thử lại (không hiện dữ liệu giả).
-  if (error) {
+  if (!loaded) {
     return (
-      <main>
+      <main className="fade-in">
         <SiteHeader />
-        <section className="mx-auto max-w-2xl px-5 py-24 text-center">
-          <div className="soft-card rounded-3xl bg-white p-10">
-            <h1 className="font-display mt-2 text-[28px] font-bold text-slate-800">Không tải được tài liệu</h1>
-            <p className="mt-3 text-slate-500">{error}</p>
-            <div className="mt-7 flex justify-center gap-3">
-              <button onClick={load} className="rounded-xl px-5 py-3 font-semibold text-white hover:brightness-95" style={{ background: "#4f9fd1" }} type="button">
-                Thử lại
-              </button>
-              <button onClick={() => router.push("/list-document")} className="rounded-xl border border-sky-200 bg-white px-5 py-3 font-semibold text-sky-700" type="button">
-                Về danh sách
-              </button>
-            </div>
-          </div>
-        </section>
+        <div className="lv-container dt-main">
+          <p className="empty">Đang tải...</p>
+        </div>
         <StudyToast message="" />
       </main>
     );
   }
 
-  // Không thấy id -> màn not-found đúng mẫu.
+  // Lỗi API -> màn lỗi + nút thử lại (không hiện dữ liệu giả).
+  if (error) {
+    return (
+      <main className="fade-in">
+        <SiteHeader />
+        <div className="lv-container dt-main">
+          <div className="dt-state">
+            <h1 className="dt-h1">Không tải được tài liệu</h1>
+            <p>{error}</p>
+            <div className="dt-state-row">
+              <button onClick={load} className="primary" type="button">
+                Thử lại
+              </button>
+              <button onClick={() => router.push("/list-document")} className="outline" type="button">
+                Về danh sách
+              </button>
+            </div>
+          </div>
+        </div>
+        <StudyToast message="" />
+      </main>
+    );
+  }
+
+  // Không thấy id -> màn not-found.
   if (!doc) {
     return (
-      <main>
+      <main className="fade-in">
         <SiteHeader />
-        <section className="mx-auto max-w-2xl px-5 py-24 text-center">
-          <div className="soft-card rounded-3xl bg-white p-10">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
-              <FileQuestion />
+        <div className="lv-container dt-main">
+          <div className="dt-state">
+            <h1 className="dt-h1">Không tìm thấy tài liệu</h1>
+            <p>Tài liệu này có thể đã được di chuyển hoặc không còn tồn tại trong thư viện.</p>
+            <div className="dt-state-row">
+              <button onClick={() => router.push("/list-document")} className="primary" type="button">
+                Về danh sách tài liệu
+              </button>
             </div>
-            <h1 className="font-display mt-6 text-[32px] font-bold text-slate-800">Không tìm thấy tài liệu</h1>
-            <p className="mt-3 text-slate-500">Tài liệu này có thể đã được di chuyển hoặc không còn tồn tại trong thư viện.</p>
-            <button onClick={() => router.push("/list-document")} className="mt-7 rounded-xl px-5 py-3 font-semibold text-white hover:brightness-95" style={{ background: "#4f9fd1" }} type="button">
-              Về danh sách tài liệu
-            </button>
           </div>
-        </section>
+        </div>
         <StudyToast message="" />
       </main>
     );
   }
 
   const meta: Array<[string, string]> = [
-    ["Người tải lên", doc.uploadedBy],
-    ["Cập nhật", doc.uploadedAt],
-    ["Dung lượng", doc.fileSize],
-    ["Số trang", `${doc.pageCount} trang`],
+    ["NGƯỜI TẢI LÊN", doc.uploadedBy],
+    ["CẬP NHẬT", doc.uploadedAt],
+    ["DUNG LƯỢNG", doc.fileSize],
+    ["SỐ TRANG", `${doc.pageCount} trang`],
   ];
 
   return (
     <main className="fade-in">
       <SiteHeader />
-      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12">
-        {/* Breadcrumb Tài liệu > tên tài liệu */}
-        <nav aria-label="Breadcrumb" className="mb-7 flex items-center gap-2 text-sm text-slate-500">
-          <button onClick={() => router.push("/list-document")} className="font-medium hover:text-sky-700" type="button">
-            Tài liệu
-          </button>
-          <ChevronRight className="h-4 w-4" />
-          <span className="truncate font-medium text-slate-700">{doc.title}</span>
-        </nav>
-        <button onClick={() => router.push("/list-document")} type="button" className="mb-7 inline-flex items-center gap-2 rounded-xl border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-50">
-          <ArrowLeft className="h-4 w-4" />
+      <div className="lv-container dt-main">
+        <button onClick={() => router.push("/list-document")} type="button" className="dt-back">
+          <ArrowLeft className="icon" aria-hidden="true" />
           <span>Quay lại danh sách</span>
         </button>
 
         {/* Thẻ thông tin chính */}
-        <section className="soft-card rounded-3xl bg-white p-6 sm:p-9">
-          <div className="flex flex-col gap-7 lg:flex-row lg:items-start lg:justify-between">
-            <div className="flex max-w-3xl gap-4 sm:gap-5">
-              <div className="flex h-16 w-14 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-500">
-                <FileText className="h-8 w-8" />
-              </div>
-              <div className="min-w-0">
-                <div className="mb-2 text-sm font-semibold text-sky-700">{doc.grade} · {doc.type}</div>
-                <h1 className="font-display break-words text-2xl font-semibold leading-tight text-slate-800 sm:text-4xl">{doc.title}</h1>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {doc.tags.map((tag) => (
-                    <span key={tag} className="rounded-full bg-sky-50 px-3 py-1 text-sm font-medium text-sky-700">{tag}</span>
-                  ))}
-                </div>
+        <section className="dt-summary" aria-labelledby="document-title">
+          <div className="dt-summary-top">
+            <div className="dt-badge" aria-hidden="true">
+              <svg viewBox="0 0 32 40" aria-label="Tệp PDF" role="img">
+                <path d="M4 1h16l9 10v28H4Z M20 1v11h9" fill="none" stroke="currentColor" strokeWidth="2" />
+                <text x="16.5" y="30" textAnchor="middle" fill="currentColor" fontSize="10" fontFamily="Arial" fontWeight="bold">PDF</text>
+              </svg>
+            </div>
+            <div className="dt-heading">
+              <p className="dt-eyebrow">{doc.grade} · {doc.type}</p>
+              <h1 className="dt-h1" id="document-title">{doc.title}</h1>
+              <div className="dt-tags">
+                {doc.tags.map((tag) => (
+                  <span key={tag} className="dt-tag">{tag}</span>
+                ))}
               </div>
             </div>
-            {/* Mobile: 2 nút chia đều full hàng; sm+ mới co theo nội dung */}
-            <div className="flex shrink-0 flex-wrap gap-3">
+            <div className="dt-actions">
               {/* Cuộn xuống khung preview */}
-              <button onClick={() => previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} type="button" className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold text-white transition hover:brightness-95 sm:flex-none" style={{ background: "#4f9fd1" }}>
-                <Eye className="h-4 w-4" />
+              <button onClick={() => previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} type="button" className="dt-btn dt-primary">
+                <Eye className="icon" aria-hidden="true" />
                 <span>Xem tài liệu</span>
               </button>
-              <button onClick={handleDownload} type="button" className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-5 py-3 font-semibold text-sky-700 transition hover:bg-sky-100 sm:flex-none">
-                <Download className="h-4 w-4" />
+              <button onClick={handleDownload} type="button" className="dt-btn">
+                <Download className="icon" aria-hidden="true" />
                 <span>Tải xuống</span>
               </button>
             </div>
           </div>
           {/* Meta 4 ô */}
-          <dl className="mt-8 grid grid-cols-2 gap-4 border-t border-sky-100 pt-6 sm:grid-cols-4">
+          <dl className="dt-meta">
             {meta.map(([label, value]) => (
               <div key={label}>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</dt>
-                <dd className="mt-1 text-sm font-semibold text-slate-700">{value}</dd>
+                <dt>{label}</dt>
+                <dd>{value}</dd>
               </div>
             ))}
           </dl>
@@ -187,9 +170,16 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
 
         {/* Khung preview PDF thật (neo để nút Xem tài liệu cuộn tới) */}
         <span ref={previewRef} className="block scroll-mt-24" />
+        <p className="dt-note"><span>Nội dung PDF gốc từ thư viện</span></p>
         <StudyPdfViewer fileUrl={doc.fileUrl} title={doc.title} />
 
       </div>
+      <footer className="lv-footer">
+        <div className="lv-container footer-inner">
+          <span>Trường THCS Lê Văn Tám　 | 　Cổng học liệu số</span>
+          <span>Tri thức hôm nay – Vững bước tương lai</span>
+        </div>
+      </footer>
       <StudyToast message="" />
     </main>
   );

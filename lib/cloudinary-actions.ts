@@ -44,6 +44,12 @@ function toDTO(r: RawResource, cloudName: string): ListDocument {
   const fileName = r.public_id.split("/").pop() ?? r.public_id;
   // Link xem phải đúng resource_type nơi file đang lưu (image hay raw).
   const fileUrl = `https://res.cloudinary.com/${cloudName}/${r.resource_type}/upload/v${r.version}/${encodePublicId(r.public_id)}.${r.format}`;
+  // Ảnh preview trang đầu: chỉ PDF lưu dạng image mới transform được
+  // (pg_1 + resize + jpg, CDN tự render lần đầu rồi cache). PDF raw cũ -> null.
+  const thumbUrl =
+    r.resource_type === "image" && r.format === "pdf"
+      ? `https://res.cloudinary.com/${cloudName}/image/upload/pg_1,w_600,f_jpg,q_auto/v${r.version}/${encodePublicId(r.public_id)}.jpg`
+      : null;
   // Ưu tiên r.pages (Admin API với pages:true), fallback context.custom.pages.
   // PDF dạng raw cũ không trả pages -> về 0 + warn để dễ debug.
   const pages = r.pages ?? (custom.pages ? Number(custom.pages) : 0);
@@ -60,6 +66,7 @@ function toDTO(r: RawResource, cloudName: string): ListDocument {
     description: custom.description ?? "",
     fullDescription: custom.description ?? "",
     fileUrl,
+    thumbUrl,
     fileSize: formatBytes(r.bytes ?? 0),
     pageCount,
     uploadedAt: formatDate(r.created_at ?? ""),

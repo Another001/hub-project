@@ -12,6 +12,7 @@ export type ListDocument = {
   description: string; // Mô tả ngắn (hiện ở thẻ)
   fullDescription: string; // Mô tả dài (hiện ở chi tiết)
   fileUrl: string; // Link PDF: Secure URL Cloudinary
+  thumbUrl: string | null; // Ảnh preview trang đầu (Cloudinary pg_1), null = PDF raw cũ -> hiện icon
   fileSize: string; // vd: "4.8 MB"
   pageCount: number;
   uploadedAt: string;
@@ -37,6 +38,7 @@ export const EXAM_OPTIONS: TagOption[] = [
   { label: "Đề thi", tag: "de-thi" },
   { label: "Đề cương", tag: "de-cuong" },
   { label: "Tài liệu bổ sung", tag: "tai-lieu-bo-sung" },
+  { label: "Truyện", tag: "truyen" },
   { label: "Video bài giảng", tag: VIDEO_TAG },
 ];
 
