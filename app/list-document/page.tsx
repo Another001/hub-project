@@ -1,16 +1,14 @@
-// MÀN 1: /list-document — Danh sách tài liệu đúng mẫu StudyShelf.
-// Dữ liệu 100% từ Cloudinary qua Server Action (không còn dữ liệu mẫu local).
-// Lọc: ô tìm kiếm văn bản + 2 dropdown tag (Lớp, Tài liệu ôn thi).
-// Fetch lỗi -> hộp lỗi + nút Thử lại (không hiện dữ liệu giả).
+// MÀN 1: /list-document — Danh sách tài liệu, giao diện theo mẫu thu-vien-toan.html.
+// Logic giữ nguyên 100%: Cloudinary qua Server Action, lọc text + tag Lớp/Loại,
+// nhánh Video YouTube tĩnh, upload/unlock/auth, loading/error/empty, toast.
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, FileUp, Search, SearchX } from "lucide-react";
+import { AlertTriangle, ArrowRight, FileUp, Search, SearchX } from "lucide-react";
 import SiteHeader from "@/components/list-document/SiteHeader";
 import StudyDocCard from "@/components/list-document/StudyDocCard";
 import StudyVideoCard from "@/components/list-document/StudyVideoCard";
 import StudyToast from "@/components/list-document/StudyToast";
-import TagDropdown from "@/components/list-document/TagDropdown";
 import UnlockDialog from "@/components/list-document/UnlockDialog";
 import UploadDialog from "@/components/list-document/UploadDialog";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
@@ -29,15 +27,13 @@ export default function ListDocumentPage() {
   const [loading, setLoading] = useState(true); // đang gọi API
   const [error, setError] = useState(""); // lỗi gọi API (trống = không lỗi)
   const [q, setQ] = useState(""); // từ khóa tìm kiếm (lọc client-side)
-  const [gradeTag, setGradeTag] = useState(""); // tag lớp: "" | lop-6..lop-9
-  const [examTag, setExamTag] = useState(""); // tag kì thi: "" | giua-ki/cuoi-ki/tong-hop
+  const [gradeTag, setGradeTag] = useState(""); // tag lớp: "" | lop-6..lop-9 (chip)
+  const [examTag, setExamTag] = useState(""); // tag loại: "" | de-thi/de-cuong/.../video (select)
   const [showUnlock, setShowUnlock] = useState(false); // modal nhập mã
   const [showUpload, setShowUpload] = useState(false); // modal upload PDF
   const [reopenUpload, setReopenUpload] = useState(false); // 401 giữa chừng -> unlock xong mở lại upload
   const [toast, setToast] = useState(""); // thông báo sau upload
   const { unlocked, checking, refresh, logout } = useAuthStatus();
-  // const [toast, setToast] = useState(""); // thông báo góc phải dưới
-  // const [toastTimer, setToastTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   // Nhánh đặc biệt: Loại = Video bài giảng -> dùng nguồn tĩnh YouTube, KHÔNG gọi Cloudinary.
   const isVideoMode = examTag === VIDEO_TAG;
@@ -52,7 +48,7 @@ export default function ListDocumentPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Đổi dropdown nào là gọi lại API với bộ tag mới.
+  // Đổi chip/select nào là gọi lại API với bộ tag mới.
   // Video mode thì bỏ qua Cloudinary (nguồn tĩnh), xóa lỗi/loading cũ.
   useEffect(() => {
     if (isVideoMode) {
@@ -62,14 +58,6 @@ export default function ListDocumentPage() {
     }
     load([gradeTag, examTag].filter(Boolean));
   }, [gradeTag, examTag, isVideoMode, load]);
-
-  // Hiện toast 3.2s rồi tự ẩn (giữ lại cho các tính năng sau, hiện chưa dùng ở màn này).
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  // const showToast = (msg: string) => {
-  //   setToast(msg);
-  //   if (toastTimer) clearTimeout(toastTimer);
-  //   setToastTimer(setTimeout(() => setToast(""), 3200));
-  // };
 
   // Lọc văn bản client-side trên kết quả API đã trả về.
   // Video mode lọc trên nguồn tĩnh DEMO_VIDEOS (không dùng gradeTag).
@@ -103,125 +91,169 @@ export default function ListDocumentPage() {
     <main className="fade-in">
       <SiteHeader unlocked={unlocked} checking={checking} onUnlockClick={() => setShowUnlock(true)} onLogout={logout} />
 
-      {/* Hero: tiêu đề + ô tìm kiếm + thống kê */}
-      <section className="hero-glow border-b border-sky-100">
-        <div className="mx-auto max-w-7xl px-5 pb-10 pt-14 sm:px-8 sm:pb-14 sm:pt-20">
-          <div className="max-w-3xl">
-            <span className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-sm font-semibold text-sky-700">
-              Thư viện học tập
-            </span>
-            <h1 className="font-display mt-5 text-[26px] font-bold tracking-tight text-slate-800 sm:text-[32px]">
-              Tài liệu học tập
-            </h1>
-            <p className="mt-4 max-w-2xl text-[16px] leading-7 text-slate-600 sm:text-[18px]">
-              Nơi lưu trữ và tra cứu tài liệu PDF hữu ích cho hành trình học tập của bạn.
-            </p>
-          </div>
-          {/* Ô tìm kiếm: mobile xếp chồng (input trên, nút dưới full), sm+ mới 1 hàng */}
-          <form
-            className="soft-card mt-8 flex max-w-3xl flex-col gap-3 rounded-2xl bg-white p-3 sm:flex-row sm:items-center"
-            role="search"
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <Search className="ml-2 h-5 w-5 shrink-0 text-sky-500" />
+      {/* Hero theo mẫu: eyebrow + H1 + intro + ô tìm kiếm pill */}
+      <section className="hero">
+        <div className="lv-container hero-inner">
+          <div className="hero-copy">
+            <p className="eyebrow">THƯ VIỆN SỐ</p>
+            <h1 className="lv-h1">Tri thức mở.<br />Khơi nguồn sáng tạo.</h1>
+            <p className="intro">Khám phá tài liệu môn Toán của Trường THCS Lê Văn Tám.</p>
+            <form className="search" role="search" onSubmit={(e) => e.preventDefault()}>
+              <Search className="icon" aria-hidden="true" />
               <label htmlFor="document-search" className="sr-only">Tìm kiếm tài liệu</label>
               <input
                 id="document-search"
-                className="min-w-0 flex-1 border-0 bg-transparent py-2 text-slate-700 outline-none"
                 type="search"
-                placeholder={isVideoMode ? "Tìm kiếm video, môn học..." : "Tìm kiếm tài liệu, môn học..."}
+                placeholder={isVideoMode ? "Tìm kiếm video, môn học..." : "Tìm kiếm tài liệu..."}
+                aria-label="Tìm kiếm tài liệu"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
-            </div>
-            <button className="w-full rounded-xl px-5 py-2.5 font-semibold text-white transition hover:brightness-95 sm:w-auto" style={{ background: "#4f9fd1" }} type="submit">
-              Tìm kiếm
-            </button>
-          </form>
+              <button aria-label="Tìm kiếm" type="submit">
+                <ArrowRight className="icon" aria-hidden="true" />
+              </button>
+            </form>
+          </div>
+          {/* Minh họa nhẹ thay cho ảnh base64 nặng trong file mẫu */}
+          <svg className="hero-art" viewBox="0 0 600 380" role="img" aria-label="Minh họa toán học" aria-hidden="true">
+            <circle cx="300" cy="190" r="150" fill="none" stroke="#008568" strokeWidth="3" opacity="0.25" />
+            <circle cx="300" cy="190" r="110" fill="none" stroke="#008568" strokeWidth="2" opacity="0.35" />
+            <path d="M180 290 L300 90 L420 290 Z" fill="none" stroke="#00664f" strokeWidth="4" opacity="0.35" strokeLinejoin="round" />
+            <rect x="400" y="200" width="110" height="80" rx="8" fill="#008568" opacity="0.16" />
+            <rect x="415" y="215" width="80" height="10" rx="5" fill="#008568" opacity="0.35" />
+            <rect x="415" y="232" width="60" height="10" rx="5" fill="#008568" opacity="0.25" />
+            <rect x="90" y="120" width="90" height="120" rx="8" fill="#fff" stroke="#e3eae8" strokeWidth="2" />
+            <rect x="104" y="138" width="62" height="9" rx="4.5" fill="#ff353b" opacity="0.8" />
+            <rect x="104" y="154" width="62" height="8" rx="4" fill="#64748b" opacity="0.35" />
+            <rect x="104" y="168" width="45" height="8" rx="4" fill="#64748b" opacity="0.25" />
+            <circle cx="140" cy="210" r="16" fill="#edf8f4" stroke="#008568" strokeWidth="2" />
+            <path d="M133 210 h14 M140 203 v14" stroke="#008568" strokeWidth="2" strokeLinecap="round" />
+          </svg>
         </div>
       </section>
 
-      {/* Khám phá: 2 dropdown tag + gợi ý + lưới thẻ */}
-      <section className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
-        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      {/* Khối library theo mẫu: section-top + filters + lưới thẻ */}
+      <section className="lv-container library" aria-labelledby="library-title">
+        <div className="section-top">
           <div>
-            <h2 className="font-display text-[24px] font-bold text-slate-800">{isVideoMode ? "Video bài giảng" : "Khám phá tài liệu"}</h2>
-            <p className="mt-1 text-sm text-slate-500" aria-live="polite">
+            <h2 className="lv-h2" id="library-title">
+              {isVideoMode ? "Video bài giảng." : "Tài liệu dành cho bạn."}
+            </h2>
+            <p className="count-note" aria-live="polite">
               {isVideoMode
                 ? `Hiển thị ${videoResults.length} / ${DEMO_VIDEOS.length} video`
                 : loading ? "Đang tải..." : `Hiển thị ${results.length} / ${docs.length} tài liệu`}
             </p>
           </div>
-          {/* 2 dropdown lọc theo tag Cloudinary (mobile full hàng, sm+ 1 hàng) */}
-          {/* Video mode: ẩn dropdown Lớp (chỉ lọc theo ô tìm kiếm), giữ dropdown Loại để thoát nhánh */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            {isVideoMode ? (
-              <p className="text-xs text-slate-400">Video lấy từ YouTube — lọc theo ô tìm kiếm, không theo Lớp.</p>
-            ) : (
-              <TagDropdown label="Lớp" options={GRADE_OPTIONS} value={gradeTag} onChange={setGradeTag} />
-            )}
-            <TagDropdown label="Loại" options={EXAM_OPTIONS} value={examTag} onChange={setExamTag} />
-            <button type="button" onClick={openUpload} className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95 sm:w-auto" style={{ background: "#4f9fd1" }}>
-              <FileUp className="h-4 w-4" />
-              <span>Tải lên PDF</span>
-            </button>
+          <button className="primary" type="button" onClick={openUpload}>
+            <FileUp className="icon" aria-hidden="true" />
+            Tải lên PDF
+          </button>
+        </div>
+
+        <div className="filters">
+          {/* Chip lớp theo mẫu (thay cho dropdown Lớp cũ, cùng giá trị tag) */}
+          {isVideoMode ? (
+            <p className="video-note">Video lấy từ YouTube — lọc theo ô tìm kiếm, không theo Lớp.</p>
+          ) : (
+            <div className="grades" role="group" aria-label="Lọc theo lớp">
+              <button
+                type="button"
+                className="chip"
+                aria-pressed={gradeTag === ""}
+                onClick={() => setGradeTag("")}
+              >
+                Tất cả
+              </button>
+              {GRADE_OPTIONS.map((o) => (
+                <button
+                  key={o.tag}
+                  type="button"
+                  className="chip"
+                  aria-pressed={gradeTag === o.tag}
+                  onClick={() => setGradeTag(o.tag)}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="selects">
+            {/* Select Loại theo mẫu (native select, cùng giá trị tag) */}
+            <select
+              className="lv-select"
+              aria-label="Loại tài liệu"
+              value={examTag}
+              onChange={(e) => setExamTag(e.target.value)}
+            >
+              <option value="">Loại tài liệu</option>
+              {EXAM_OPTIONS.map((o) => (
+                <option key={o.tag} value={o.tag}>{o.label}</option>
+              ))}
+            </select>
             {hasFilter ? (
-              <button type="button" onClick={resetFilters} className="w-full rounded-xl border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-50 sm:w-auto">
+              <button type="button" onClick={resetFilters} className="outline">
                 Xóa bộ lọc
               </button>
             ) : null}
           </div>
         </div>
 
-        {/* Nhánh video: lưới thẻ YouTube tĩnh / empty state riêng (không dùng lỗi API Cloudinary) */}
+        {/* Nhánh video: lưới thẻ YouTube tĩnh / empty riêng */}
         {isVideoMode ? (
           videoResults.length === 0 ? (
-            <section className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/60 px-6 py-16 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-sky-600 shadow-sm">
-                <SearchX />
+            <div className="empty-box">
+              <div className="state-icon"><SearchX className="icon" /></div>
+              <h2 className="lv-h2">Chưa tìm thấy video phù hợp</h2>
+              <p>Hãy thử thay đổi từ khóa hoặc chọn loại khác để khám phá thêm.</p>
+              <div className="more-row">
+                <button onClick={resetFilters} className="primary" type="button">
+                  Đặt lại bộ lọc
+                </button>
               </div>
-              <h2 className="font-display mt-5 text-[24px] font-bold text-slate-800">Chưa tìm thấy video phù hợp</h2>
-              <p className="mx-auto mt-2 max-w-md text-slate-500">Hãy thử thay đổi từ khóa hoặc chọn loại khác để khám phá thêm.</p>
-              <button onClick={resetFilters} className="mt-6 rounded-xl px-5 py-3 font-semibold text-white hover:brightness-95" style={{ background: "#4f9fd1" }} type="button">
-                Đặt lại bộ lọc
-              </button>
-            </section>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="lv-grid">
               {videoResults.map((v) => <StudyVideoCard key={v.id} video={v} />)}
             </div>
           )
         ) : error ? (
-          <section className="rounded-2xl border border-red-200 bg-red-50 px-6 py-12 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-red-500 shadow-sm">
-              <AlertTriangle />
+          <div className="empty-box">
+            <div className="state-icon danger"><AlertTriangle className="icon" /></div>
+            <h2 className="lv-h2">Không tải được tài liệu</h2>
+            <p>{error}</p>
+            <div className="more-row">
+              <button onClick={() => load([gradeTag, examTag].filter(Boolean))} className="primary" type="button">
+                Thử lại
+              </button>
             </div>
-            <h2 className="font-display mt-5 text-[24px] font-bold text-slate-800">Không tải được tài liệu</h2>
-            <p className="mx-auto mt-2 max-w-md text-slate-500">{error}</p>
-            <button onClick={() => load([gradeTag, examTag].filter(Boolean))} className="mt-6 rounded-xl px-5 py-3 font-semibold text-white hover:brightness-95" style={{ background: "#4f9fd1" }} type="button">
-              Thử lại
-            </button>
-          </section>
+          </div>
         ) : loading && docs.length === 0 ? (
-          <p className="rounded-xl border bg-white p-8 text-center text-slate-500">Đang tải danh sách tài liệu...</p>
+          <p className="empty">Đang tải danh sách tài liệu...</p>
         ) : results.length === 0 ? (
-          <section className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/60 px-6 py-16 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-sky-600 shadow-sm">
-              <SearchX />
+          <div className="empty-box">
+            <div className="state-icon"><SearchX className="icon" /></div>
+            <h2 className="lv-h2">Chưa tìm thấy tài liệu phù hợp</h2>
+            <p>Hãy thử thay đổi từ khóa hoặc xóa bộ lọc để khám phá thêm tài liệu.</p>
+            <div className="more-row">
+              <button onClick={resetFilters} className="primary" type="button">
+                Đặt lại bộ lọc
+              </button>
             </div>
-            <h2 className="font-display mt-5 text-[24px] font-bold text-slate-800">Chưa tìm thấy tài liệu phù hợp</h2>
-            <p className="mx-auto mt-2 max-w-md text-slate-500">Hãy thử thay đổi từ khóa hoặc xóa bộ lọc để khám phá thêm tài liệu.</p>
-            <button onClick={resetFilters} className="mt-6 rounded-xl px-5 py-3 font-semibold text-white hover:brightness-95" style={{ background: "#4f9fd1" }} type="button">
-              Đặt lại bộ lọc
-            </button>
-          </section>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="lv-grid">
             {results.map((doc) => <StudyDocCard key={doc.id} doc={doc} />)}
           </div>
         )}
       </section>
+
+      <footer className="lv-footer">
+        <div className="lv-container footer-inner">
+          <span>Trường THCS Lê Văn Tám　 | 　Cổng học liệu số</span>
+          <span>Tri thức hôm nay – Vững bước tương lai</span>
+        </div>
+      </footer>
 
       <StudyToast message={toast} />
       <UnlockDialog

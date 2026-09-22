@@ -1,5 +1,126 @@
-/* Style riêng của màn list-document, copy từ file HTML mẫu của bạn. */
-.page-shell { width: 100%; min-height: 100vh; background: linear-gradient(180deg, #f7fcff 0%, #ffffff 46%); }
+/* Theme list-document theo file mau thu-vien-toan.html (xanh la #008568).
+   Gi logic: chi doi giao dien. Cac class cu (.soft-card, .doc-card, .font-display,
+   .hero-glow, .pdf-sheet, .react-pdf...) duoc giu lai de man chi tiet [id] khong vo. */
+
+/* Bien mau dung chung */
+.page-shell {
+  --green: #008568;
+  --dark: #00664f;
+  --ink: #121817;
+  --muted: #64748b;
+  --line: #e3eae8;
+  --bg: #f5f7f8;
+}
+
+/* Vo page: nen xam nhat + font he thong giong mau (thay gradient xanh duong cu) */
+.page-shell {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+}
+.page-shell button,
+.page-shell input,
+.page-shell select { font: inherit; }
+.page-shell button,
+.page-shell a,
+.page-shell select { -webkit-tap-highlight-color: transparent; }
+.page-shell button { cursor: pointer; }
+.page-shell button:focus-visible,
+.page-shell a:focus-visible,
+.page-shell input:focus-visible,
+.page-shell select:focus-visible { outline: 3px solid #48bfa3; outline-offset: 4px; }
+.page-shell button { transition: background .18s, transform .18s; }
+.page-shell button:hover { filter: brightness(.96); }
+.page-shell a { color: inherit; }
+
+/* Container rieng (doi ten de tranh dung Tailwind .container) */
+.lv-container { width: min(1300px, calc(100% - 80px)); margin: auto; }
+
+/* Header chung (SiteHeader dung o ca list + detail) */
+.lv-header { background: #fff; }
+.header-inner { height: 82px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.brand { display: flex; align-items: center; gap: 16px; text-decoration: none; font-size: 24px; font-weight: 750; color: var(--dark); background: none; border: 0; padding: 0; text-align: left; }
+.brand-mark { width: 52px; height: 52px; border-radius: 14px; background: #e6f4ef; color: var(--dark); display: grid; place-items: center; flex-shrink: 0; }
+.login { display: flex; gap: 10px; align-items: center; background: none; border: 0; color: var(--dark); font-weight: 600; padding: 12px; border-radius: 12px; }
+.login-solid { background: #e6f4ef; border: 1px solid #cde8dd; }
+.icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+/* Hero */
+.hero { background: linear-gradient(110deg, #fafbfc, #f0f5f4); overflow: hidden; }
+.hero-inner { position: relative; min-height: 400px; display: flex; align-items: center; }
+.hero-copy { width: 59%; z-index: 1; padding: 42px 0; }
+.eyebrow { font-size: 13px; letter-spacing: 3px; font-weight: 650; color: #54647a; margin: 0 0 18px; }
+.lv-h1 { font-size: clamp(36px, 4.6vw, 66px); letter-spacing: -2.6px; line-height: 1.09; margin: 0; font-weight: 750; color: var(--ink); }
+.intro { font-size: 21px; color: var(--muted); line-height: 1.5; margin: 22px 0 25px; }
+.hero-art { position: absolute; width: 53%; height: 100%; right: -42px; top: 0; pointer-events: none; }
+.search { max-width: 650px; height: 65px; padding: 6px 7px 6px 24px; display: flex; align-items: center; gap: 15px; background: white; border: 1px solid var(--line); border-radius: 40px; box-shadow: 0 6px 30px #163c3210; }
+.search input { min-width: 0; flex: 1; border: 0; outline: none; background: transparent; font-size: 17px; color: var(--ink); }
+.search input::placeholder { color: var(--muted); }
+.search button { border: 0; border-radius: 50%; height: 50px; width: 50px; background: var(--green); color: #fff; display: grid; place-items: center; flex-shrink: 0; }
+
+/* Khoi library */
+.library { padding: 28px 0 14px; }
+.section-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.lv-h2 { font-size: 32px; letter-spacing: -1.1px; margin: 0; color: var(--ink); font-weight: 750; }
+.count-note { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.primary { display: inline-flex; align-items: center; justify-content: center; gap: 9px; border: 0; border-radius: 12px; background: var(--green); color: #fff; padding: 13px 20px; font-weight: 650; white-space: nowrap; }
+.filters { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 16px; }
+.grades, .selects { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.chip, .lv-select { border: 1px solid var(--line); border-radius: 30px; background: #fff; padding: 11px 22px; color: #34455b; font-size: 14px; }
+.chip[aria-pressed="true"] { color: #fff; background: var(--green); border-color: var(--green); }
+.lv-select { cursor: pointer; padding-right: 32px; max-width: 260px; }
+.video-note { font-size: 12px; color: var(--muted); }
+
+/* Luoi + the (doi ten .grid -> .lv-grid de tranh Tailwind .grid) */
+.lv-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 22px 24px 14px; display: flex; flex-direction: column; min-height: 192px; }
+.card-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.category { font-size: 12px; font-weight: 650; color: var(--muted); letter-spacing: .5px; }
+.lv-h3 { font-size: 21px; letter-spacing: -.6px; line-height: 1.3; margin: 11px 0 6px; color: var(--ink); overflow-wrap: anywhere; }
+.pdf { width: 32px; height: 39px; flex-shrink: 0; color: #ff353b; }
+.card p.card-desc { font-size: 14px; line-height: 1.5; color: var(--muted); margin: 0 0 7px; }
+.meta { font-size: 12px; color: var(--muted); margin-top: auto; padding-bottom: 10px; }
+.card-actions { border-top: 1px solid #edf0f2; padding-top: 8px; display: flex; align-items: center; justify-content: space-between; }
+.view { display: flex; align-items: center; gap: 12px; font-weight: 600; color: var(--dark); border: 0; background: none; padding: 6px 0; font-size: 14px; }
+.download { width: 35px; height: 35px; border: 1px solid #def0e9; border-radius: 50%; background: #edf8f4; color: var(--green); display: grid; place-items: center; }
+.thumb-wrap { position: relative; display: block; width: 100%; overflow: hidden; border-radius: 12px; border: 1px solid var(--line); background: #f1f5f4; padding: 0; }
+.thumb-wrap img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.thumb-play { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(18, 24, 23, .08); }
+.thumb-play span { width: 48px; height: 48px; border-radius: 50%; background: rgba(255, 255, 255, .95); color: #e11d48; display: grid; place-items: center; box-shadow: 0 8px 24px rgba(0, 0, 0, .18); }
+.thumb-time { position: absolute; bottom: 8px; right: 8px; border-radius: 6px; background: rgba(18, 24, 23, .85); color: #fff; font-size: 12px; font-weight: 600; padding: 2px 8px; }
+.more-row { text-align: center; margin-top: 18px; }
+.outline { padding: 10px 24px; border: 1px solid var(--green); border-radius: 28px; background: transparent; color: var(--dark); font-weight: 600; }
+.empty { text-align: center; padding: 45px 20px; color: var(--muted); }
+.empty-box { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 45px 20px; text-align: center; color: var(--muted); }
+.empty-box .lv-h2 { margin-bottom: 8px; }
+.state-icon { width: 52px; height: 52px; margin: 0 auto 14px; border-radius: 14px; background: #eef6f3; color: var(--green); display: grid; place-items: center; }
+.state-icon.danger { background: #fef2f2; color: #dc2626; }
+
+/* Footer */
+.lv-footer { background: #fff; margin-top: 0; padding: 18px 0; font-size: 12px; color: var(--muted); }
+.footer-inner { display: flex; justify-content: space-between; gap: 20px; }
+
+/* Toast giua day (lop .toast-show cu van giu de tuong thich) */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 32px); width: max-content; background: #143c32; color: white; padding: 14px 20px; border-radius: 12px; z-index: 60; box-shadow: 0 8px 24px #0002; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; }
+.toast:empty { display: none; }
+
+/* Dialog dung div (Upload/Unlock) theo mau <dialog> */
+.lv-dialog-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: #102a4380; backdrop-filter: blur(3px); padding: 16px; }
+.lv-dialog { border: 1px solid var(--line); border-radius: 20px; padding: 26px; width: min(480px, calc(100% - 32px)); max-height: 90vh; overflow: auto; color: var(--ink); background: #fff; }
+.lv-dialog h2 { font-size: 26px; margin: 0; letter-spacing: -.6px; }
+.lv-dialog p.lv-dialog-sub { color: var(--muted); line-height: 1.6; font-size: 14px; margin: 8px 0 0; }
+.lv-dialog label { display: block; font-size: 14px; font-weight: 600; margin: 14px 0 0; }
+.lv-dialog input, .lv-dialog select { display: block; width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-top: 7px; background: #fff; color: var(--ink); }
+.lv-dialog .buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+.lv-file { border-style: dashed; background: #f6faf9; }
+.lv-error { color: #dc2626; font-size: 13px; font-weight: 600; margin-top: 10px; }
+.lv-dialog-head { display: flex; align-items: center; gap: 12px; }
+.lv-dialog-icon { width: 46px; height: 46px; border-radius: 12px; background: #e6f4ef; color: var(--dark); display: grid; place-items: center; flex-shrink: 0; }
+.hidden { display: none !important; }
+
+/* Giu class cu cho man chi tiet [id] */
 .hero-glow { background: radial-gradient(circle at 80% 25%, rgba(177, 226, 249, .65), transparent 28%), radial-gradient(circle at 10% 75%, rgba(219, 244, 255, .8), transparent 26%); }
 .soft-card { border: 1px solid #dbeaf3; box-shadow: 0 12px 32px rgba(58, 114, 145, .09); }
 .doc-card { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
@@ -7,7 +128,50 @@
 .fade-in { animation: fadeIn .35s ease both; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .pdf-sheet { background: #fff; }
-/* Lưới an toàn: canvas PDF không bao giờ tràn khung trên mobile. */
+/* Luoi an toan: canvas PDF khong bao gio tran khung tren mobile. */
 .react-pdf__Page canvas { max-width: 100%; height: auto !important; }
 .toast-show { transform: translateY(0) !important; opacity: 1 !important; pointer-events: auto !important; }
 .font-display { font-family: "Fraunces", Georgia, serif; }
+
+@media(min-width:1450px) { .hero-copy { width: 61%; } .hero-art { right: -55px; } }
+@media(max-width:1050px) {
+  .lv-container { width: calc(100% - 48px); }
+  .hero-copy { width: 66%; }
+  .lv-h1 { font-size: 48px; }
+  .intro { font-size: 17px; }
+  .hero-art { right: -80px; opacity: .65; }
+  .lv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filters { align-items: flex-start; }
+  .chip { padding: 10px 16px; }
+  .selects { justify-content: flex-end; }
+  .brand { font-size: 20px; }
+}
+@media(max-width:650px) {
+  .lv-container { width: calc(100% - 32px); }
+  .header-inner { height: 74px; }
+  .brand-mark { width: 40px; height: 40px; }
+  .brand { gap: 8px; font-size: 16px; }
+  .login { padding: 8px; font-size: 13px; gap: 5px; }
+  .hero-inner { min-height: 0; display: block; }
+  .hero-copy { width: 100%; padding: 28px 0 20px; }
+  .hero-art { position: relative; display: block; width: 100%; height: 210px; right: auto; opacity: 1; margin-top: -5px; }
+  .lv-h1 { font-size: 40px; letter-spacing: -1.8px; }
+  .intro { font-size: 16px; margin: 18px 0; }
+  .eyebrow { font-size: 11px; }
+  .search { height: 57px; padding-left: 16px; }
+  .search input { font-size: 14px; }
+  .search button { height: 43px; width: 43px; }
+  .lv-h2 { font-size: 25px; }
+  .section-top { align-items: flex-start; }
+  .primary { padding: 11px 12px; font-size: 13px; }
+  .filters { flex-direction: column; gap: 12px; align-items: stretch; }
+  .grades { flex-wrap: nowrap; gap: 6px; width: 100%; overflow: auto; padding-bottom: 4px; }
+  .chip { padding: 9px 14px; white-space: nowrap; }
+  .selects { width: 100%; justify-content: flex-start; }
+  .selects .lv-select { flex: 1; min-width: 0; padding: 10px 13px; }
+  .lv-grid { grid-template-columns: 1fr; }
+  .card { padding: 20px; min-height: 190px; }
+  .footer-inner { flex-direction: column; gap: 8px; }
+  .library { padding-top: 24px; }
+  .lv-h3 { overflow-wrap: anywhere; }
+}

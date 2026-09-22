@@ -1,5 +1,5 @@
 // POST /api/documents/upload — upload PDF, BẮT BUỘC đã unlock (cookie).
-// FormData: file (PDF <=10MB) + title* + grade + type + tags[].
+// FormData: file (PDF <=4MB, giới hạn bởi Vercel FUNCTION_PAYLOAD_TOO_LARGE ~4.5MB) + title* + grade + type + tags[].
 // Trả 201 { id, fileUrl, fileSize } để FE chuyển sang detail hoặc reload list.
 import { NextResponse, type NextRequest } from "next/server";
 import "server-only";
@@ -77,8 +77,8 @@ export async function POST(req: NextRequest) {
   const file = form.get("file");
   if (!(file instanceof File)) return bad("Thiếu file PDF (field 'file').");
 
-  const maxMb = Number(process.env.MAX_UPLOAD_MB || "10");
-  const maxBytes = (Number.isFinite(maxMb) && maxMb > 0 ? maxMb : 10) * 1024 * 1024;
+  const maxMb = Number(process.env.MAX_UPLOAD_MB || "4");
+  const maxBytes = (Number.isFinite(maxMb) && maxMb > 0 ? maxMb : 4) * 1024 * 1024;
   if (file.size <= 0) return bad("File rỗng.");
   if (file.size > maxBytes) return bad(`File vượt quá ${(maxBytes / 1024 / 1024).toFixed(0)}MB.`);
 

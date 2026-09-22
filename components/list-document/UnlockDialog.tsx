@@ -1,9 +1,10 @@
 // Modal nhập mã truy cập -> POST /api/auth/unlock -> nhận cookie httpOnly.
-// Sai mã hiện lỗi chung, nhập sai nhiều lần hiện đếm ngược rate-limit.
+// Giao diện theo mẫu thu-vien-toan.html (.lv-dialog). Logic giữ nguyên:
+// sai mã hiện lỗi, nhiều lần sai hiện đếm ngược rate-limit từ server.
 "use client";
 
 import { useState } from "react";
-import { KeyRound, X } from "lucide-react";
+import { KeyRound } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -45,45 +46,34 @@ export default function UnlockDialog({ open, onClose, onUnlocked }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-label="Nhập mã truy cập">
-      <div className="soft-card w-full max-w-md rounded-2xl bg-white p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
-              <KeyRound className="h-5 w-5" />
-            </span>
-            <div>
-              <h2 className="text-lg font-bold text-slate-800">Nhập mã truy cập</h2>
-              <p className="text-sm text-slate-500">Nhập đúng mã để mở khóa tải lên tài liệu.</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100" type="button" aria-label="Đóng">
-            <X className="h-4 w-4" />
-          </button>
+    <div className="lv-dialog-backdrop" role="dialog" aria-modal="true" aria-label="Đăng nhập">
+      <form className="lv-dialog" onSubmit={submit}>
+        <div className="lv-dialog-head">
+          <span className="lv-dialog-icon" aria-hidden="true">
+            <KeyRound className="icon" />
+          </span>
+          <h2>Đăng nhập</h2>
         </div>
-        <form onSubmit={submit} className="mt-5">
-          <label htmlFor="access-code" className="text-sm font-semibold text-slate-600">Mã số</label>
+        <p className="lv-dialog-sub">Nhập mã truy cập để mở khóa tải lên tài liệu.</p>
+        <label>
+          Mã truy cập
           <input
-            id="access-code"
             type="password"
             autoComplete="off"
             autoFocus
-            className="mt-2 w-full rounded-xl border border-sky-200 px-4 py-2.5 text-slate-700 outline-none focus:border-sky-400"
             placeholder="Nhập mã..."
             value={code}
             onChange={(e) => setCode(e.target.value)}
           />
-          {error ? <p className="mt-2 text-sm font-medium text-red-600" role="alert">{error}</p> : null}
-          <button
-            disabled={loading || !code.trim()}
-            className="mt-4 w-full rounded-xl px-5 py-2.5 font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
-            style={{ background: "#4f9fd1" }}
-            type="submit"
-          >
-            {loading ? "Đang kiểm tra..." : "Mở khóa"}
+        </label>
+        {error ? <p className="lv-error" role="alert">{error}</p> : null}
+        <div className="buttons">
+          <button className="outline" type="button" onClick={onClose}>Hủy</button>
+          <button className="primary" type="submit" disabled={loading || !code.trim()}>
+            {loading ? "Đang kiểm tra..." : "Đăng nhập"}
           </button>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   );
 }

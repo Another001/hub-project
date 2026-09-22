@@ -1,9 +1,10 @@
-// Modal upload PDF (tối đa 10MB) + metadata đầy đủ.
-// 401 từ server -> báo lên cha để mở modal nhập mã.
+// Modal upload PDF (tối đa 4MB do giới hạn Vercel) + metadata đầy đủ.
+// Giao diện theo mẫu thu-vien-toan.html (.lv-dialog). Logic giữ nguyên:
+// validate .pdf + 4MB, FormData title/grade/type/tags, 401 -> báo cha mở unlock.
 "use client";
 
 import { useMemo, useState } from "react";
-import { FileUp, X } from "lucide-react";
+import { FileUp } from "lucide-react";
 import { EXAM_OPTIONS, GRADE_OPTIONS } from "@/lib/list-documents";
 
 type Props = {
@@ -13,7 +14,7 @@ type Props = {
   onUploaded: (id: string) => void; // upload xong -> cha reload list
 };
 
-const MAX_MB = 10;
+const MAX_MB = 4;
 
 export default function UploadDialog({ open, onClose, onNeedUnlock, onUploaded }: Props) {
   const [file, setFile] = useState<File | null>(null);
@@ -67,6 +68,10 @@ export default function UploadDialog({ open, onClose, onNeedUnlock, onUploaded }
         onNeedUnlock(); // hết hạn/chưa unlock -> nhập mã rồi upload lại
         return;
       }
+      if (r.status === 413) {
+        setError(`File quá lớn cho server (giới hạn ${MAX_MB}MB). Hãy nén/giảm dung lượng PDF rồi thử lại.`);
+        return;
+      }
       if (!r.ok) {
         setError(j.error || "Upload thất bại. Thử lại.");
         return;
@@ -75,6 +80,8 @@ export default function UploadDialog({ open, onClose, onNeedUnlock, onUploaded }
       // Reset form
       setFile(null);
       setTitle("");
+      setGradeTag("");
+      setExamTag("");
       onClose();
       onUploaded(id);
     } catch {
@@ -85,83 +92,68 @@ export default function UploadDialog({ open, onClose, onNeedUnlock, onUploaded }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-label="Tải lên tài liệu PDF">
-      <div className="soft-card max-h-[90vh] w-full max-w-lg overflow-auto rounded-2xl bg-white p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
-              <FileUp className="h-5 w-5" />
-            </span>
-            <div>
-              <h2 className="text-lg font-bold text-slate-800">Tải lên tài liệu PDF</h2>
-              <p className="text-sm text-slate-500">Tối đa {MAX_MB}MB, chỉ nhận file PDF thật.</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100" type="button" aria-label="Đóng">
-            <X className="h-4 w-4" />
+    <div className="lv-dialog-backdrop" role="dialog" aria-modal="true" aria-label="Tải lên tài liệu PDF">
+      <form className="lv-dialog" onSubmit={submit}>
+        <div className="lv-dialog-head">
+          <span className="lv-dialog-icon" aria-hidden="true">
+            <FileUp className="icon" />
+          </span>
+          <h2>Tải lên tài liệu PDF</h2>
+        </div>
+        <p className="lv-dialog-sub">Tối đa {MAX_MB}MB, chỉ nhận file PDF.</p>
+
+        <label>
+          Tệp PDF
+          <input
+            className="lv-file"
+            type="file"
+            accept=".pdf,application/pdf"
+            onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+          />
+        </label>
+        {file ? (
+          <p className="lv-dialog-sub">{file.name} • {(file.size / 1024 / 1024).toFixed(2)}MB</p>
+        ) : null}
+
+        <label>
+          Tên tài liệu
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={200}
+            placeholder="Nhập tên tài liệu"
+          />
+        </label>
+
+        <label>
+          Khối lớp
+          <select value={gradeTag} onChange={(e) => setGradeTag(e.target.value)}>
+            <option value="">-- Chọn lớp --</option>
+            {GRADE_OPTIONS.map((o) => (
+              <option key={o.tag} value={o.tag}>{o.label}</option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          Loại tài liệu
+          <select value={examTag} onChange={(e) => setExamTag(e.target.value)}>
+            <option value="">-- Chọn loại --</option>
+            {examOpts.map((o) => (
+              <option key={o.tag} value={o.tag}>{o.label}</option>
+            ))}
+          </select>
+        </label>
+
+        {error ? <p className="lv-error" role="alert">{error}</p> : null}
+
+        <div className="buttons">
+          <button className="outline" type="button" onClick={onClose}>Hủy</button>
+          <button className="primary" type="submit" disabled={loading || !file || !title.trim()}>
+            {loading ? "Đang tải lên..." : "Thêm tài liệu"}
           </button>
         </div>
-
-        <form onSubmit={submit} className="mt-5 space-y-4">
-          <div>
-            <label className="text-sm font-semibold text-slate-600" htmlFor="upload-file">File PDF</label>
-            <input
-              id="upload-file"
-              type="file"
-              accept=".pdf,application/pdf"
-              className="mt-2 w-full rounded-xl border border-dashed border-sky-200 bg-sky-50/50 px-4 py-3 text-sm text-slate-600"
-              onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
-            />
-            {file ? (
-              <p className="mt-1 text-xs text-slate-500">{file.name} • {(file.size / 1024 / 1024).toFixed(2)}MB</p>
-            ) : null}
-          </div>
-
-          <div>
-            <label className="text-sm font-semibold text-slate-600" htmlFor="upload-title">Tiêu đề *</label>
-            <input
-              id="upload-title"
-              className="mt-2 w-full rounded-xl border border-sky-200 px-4 py-2.5 text-slate-700 outline-none focus:border-sky-400"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={200}
-              placeholder="VD: Toán 9 - Đề giữa kì số 1"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="text-sm font-semibold text-slate-600" htmlFor="upload-grade">Lớp</label>
-              <select id="upload-grade" className="mt-2 w-full rounded-xl border border-sky-200 bg-white px-3 py-2.5 text-sm text-slate-700" value={gradeTag} onChange={(e) => setGradeTag(e.target.value)}>
-                <option value="">-- Chọn lớp --</option>
-                {GRADE_OPTIONS.map((o) => (
-                  <option key={o.tag} value={o.tag}>{o.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-sm font-semibold text-slate-600" htmlFor="upload-type">Loại</label>
-              <select id="upload-type" className="mt-2 w-full rounded-xl border border-sky-200 bg-white px-3 py-2.5 text-sm text-slate-700" value={examTag} onChange={(e) => setExamTag(e.target.value)}>
-                <option value="">-- Chọn loại --</option>
-                {examOpts.map((o) => (
-                  <option key={o.tag} value={o.tag}>{o.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {error ? <p className="text-sm font-medium text-red-600" role="alert">{error}</p> : null}
-
-          <button
-            disabled={loading || !file || !title.trim()}
-            className="w-full rounded-xl px-5 py-2.5 font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
-            style={{ background: "#4f9fd1" }}
-            type="submit"
-          >
-            {loading ? "Đang tải lên..." : "Tải lên"}
-          </button>
-        </form>
-      </div>
+      </form>
     </div>
   );
 }
