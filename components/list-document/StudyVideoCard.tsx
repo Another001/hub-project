@@ -19,8 +19,7 @@ export default function StudyVideoCard({ video }: { video: ListVideo }) {
             <Play className="icon" />
           </span>
         </span>
-        <span className="thumb-time">{video.duration}</span>
-      </button>
+        {video.duration ? <span className="thumb-time">{video.duration}</span> : null}      </button>
 
       <div className="card-head" style={{ marginTop: 14 }}>
         <div className="min-w-0">
@@ -29,7 +28,7 @@ export default function StudyVideoCard({ video }: { video: ListVideo }) {
         </div>
       </div>
       <p className="card-desc">{video.description}</p>
-      <div className="meta">{video.channel} • Cập nhật {video.uploadedAt}</div>
+      <div className="meta">{[video.channel, video.uploadedAt ? `Cập nhật ${video.uploadedAt}` : ""].filter(Boolean).join(" • ")}</div>
       <div className="card-actions">
         <button className="view" type="button" onClick={open}>
           Xem trên YouTube

@@ -174,7 +174,7 @@ export default function ListDocumentPage() {
               value={examTag}
               onChange={(e) => setExamTag(e.target.value)}
             >
-              <option value="">Loại tài liệu</option>
+              <option value="">Tất cả</option>
               {EXAM_OPTIONS.map((o) => (
                 <option key={o.tag} value={o.tag}>{o.label}</option>
               ))}
