@@ -9,6 +9,7 @@ import SiteHeader from "@/components/list-document/SiteHeader";
 import StudyDocCard from "@/components/list-document/StudyDocCard";
 import StudyVideoCard from "@/components/list-document/StudyVideoCard";
 import StudyToast from "@/components/list-document/StudyToast";
+import DeleteDialog from "@/components/list-document/DeleteDialog";
 import UnlockDialog from "@/components/list-document/UnlockDialog";
 import UploadDialog from "@/components/list-document/UploadDialog";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
@@ -32,7 +33,12 @@ export default function ListDocumentPage() {
   const [showUnlock, setShowUnlock] = useState(false); // modal nhập mã
   const [showUpload, setShowUpload] = useState(false); // modal upload PDF
   const [reopenUpload, setReopenUpload] = useState(false); // 401 giữa chừng -> unlock xong mở lại upload
-  const [toast, setToast] = useState(""); // thông báo sau upload
+  const [deleteTarget, setDeleteTarget] = useState<ListDocument | null>(null); // file chờ xác nhận xóa
+  const [deleting, setDeleting] = useState(false); // đang gọi API xóa
+  const [deleteError, setDeleteError] = useState(""); // lỗi xóa trong modal
+  const [reopenDelete, setReopenDelete] = useState(false); // 401 khi xóa -> unlock xong tự xóa tiếp
+  const [toast, setToast] = useState(""); // thông báo sau upload/xóa
+  const [toastTimer, setToastTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const { unlocked, checking, refresh, logout } = useAuthStatus();
 
   // Nhánh đặc biệt: Loại = Video bài giảng -> dùng nguồn tĩnh YouTube, KHÔNG gọi Cloudinary.
@@ -83,8 +89,54 @@ export default function ListDocumentPage() {
   // Upload xong -> tải lại list theo tag đang chọn + toast.
   const handleUploaded = () => {
     load([gradeTag, examTag].filter(Boolean));
-    setToast("Tải lên thành công.");
-    setTimeout(() => setToast(""), 3200);
+    showToast("Tải lên thành công.");
+  };
+
+  // Hiện toast 3.2s rồi tự ẩn.
+  const showToast = (msg: string) => {
+    setToast(msg);
+    if (toastTimer) clearTimeout(toastTimer);
+    setToastTimer(setTimeout(() => setToast(""), 3200));
+  };
+
+  // Bấm thùng rác trên thẻ: chưa unlock -> đòi mã trước, rồi mở xác nhận.
+  const openDelete = (doc: ListDocument) => {
+    setDeleteError("");
+    if (!unlocked) {
+      setDeleteTarget(doc);
+      setReopenDelete(true);
+      setShowUnlock(true);
+      return;
+    }
+    setDeleteTarget(doc);
+  };
+
+  // Xác nhận xóa -> gọi API, 401 giữa chừng -> đòi mã rồi tự xóa tiếp.
+  const confirmDelete = async () => {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const r = await fetch(`/api/documents/${deleteTarget.id}`, { method: "DELETE" });
+      const j = (await r.json().catch(() => ({}))) as { error?: string };
+      if (r.status === 401) {
+        setReopenDelete(true);
+        setShowUnlock(true);
+        refresh();
+        return;
+      }
+      if (!r.ok) {
+        setDeleteError(j.error || "Xóa thất bại. Thử lại.");
+        return;
+      }
+      setDeleteTarget(null);
+      load([gradeTag, examTag].filter(Boolean));
+      showToast("Đã xóa tài liệu.");
+    } catch {
+      setDeleteError("Không kết nối được server. Thử lại.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -231,7 +283,7 @@ export default function ListDocumentPage() {
           </div>
         ) : (
           <div className="lv-grid">
-            {results.map((doc) => <StudyDocCard key={doc.id} doc={doc} />)}
+            {results.map((doc) => <StudyDocCard key={doc.id} doc={doc} onDelete={openDelete} />)}
           </div>
         )}
       </section>
@@ -244,14 +296,28 @@ export default function ListDocumentPage() {
       </footer>
 
       <StudyToast message={toast} />
+      <DeleteDialog
+        open={Boolean(deleteTarget) && !reopenDelete}
+        fileName={deleteTarget?.title ?? ""}
+        loading={deleting}
+        error={deleteError}
+        onClose={() => { setDeleteTarget(null); setDeleteError(""); setReopenDelete(false); }}
+        onConfirm={confirmDelete}
+      />
       <UnlockDialog
         open={showUnlock}
-        onClose={() => { setShowUnlock(false); setReopenUpload(false); }}
+        onClose={() => { setShowUnlock(false); setReopenUpload(false); setReopenDelete(false); setDeleteTarget(null); setDeleteError(""); }}
         onUnlocked={() => {
           refresh();
           if (reopenUpload) {
             setReopenUpload(false);
             setShowUpload(true);
+          }
+          // Vừa đòi mã để xóa (từ thẻ hoặc 401 giữa chừng) -> user đã xác nhận trước đó nên xóa tiếp luôn.
+          if (reopenDelete && deleteTarget) {
+            setReopenDelete(false);
+            setShowUnlock(false);
+            confirmDelete();
           }
         }}
       />

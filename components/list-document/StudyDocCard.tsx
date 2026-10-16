@@ -6,11 +6,11 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Download, Image as ImageIcon } from "lucide-react";
+import { ArrowRight, Download, Image as ImageIcon, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { ListDocument } from "@/lib/list-documents";
 
-export default function StudyDocCard({ doc }: { doc: ListDocument }) {
+export default function StudyDocCard({ doc, onDelete }: { doc: ListDocument; onDelete?: (doc: ListDocument) => void }) {
   const router = useRouter();
   const open = () => router.push(`/list-document/${doc.id}`);
   const [imgOk, setImgOk] = useState(true); // thumb lỗi -> ẩn, fallback icon
@@ -60,6 +60,18 @@ export default function StudyDocCard({ doc }: { doc: ListDocument }) {
         <button className="download" type="button" onClick={open} aria-label={`Xem ${doc.title}`}>
           <Download className="icon" aria-hidden="true" />
         </button>
+        {onDelete ? (
+          <button
+            className="download"
+            type="button"
+            onClick={() => onDelete(doc)}
+            aria-label={`Xóa ${doc.title}`}
+            title="Xóa tài liệu"
+            style={{ borderColor: "#fecaca", background: "#fef2f2", color: "#dc2626" }}
+          >
+            <Trash2 className="icon" aria-hidden="true" />
+          </button>
+        ) : null}
       </div>
     </article>
   );

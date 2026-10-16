@@ -5,11 +5,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Download, Eye, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Download, Eye, Image as ImageIcon, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import SiteHeader from "@/components/list-document/SiteHeader";
 import StudyPdfViewer from "@/components/list-document/StudyPdfViewer";
 import StudyToast from "@/components/list-document/StudyToast";
+import DeleteDialog from "@/components/list-document/DeleteDialog";
+import UnlockDialog from "@/components/list-document/UnlockDialog";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 import { getCloudDocument } from "@/lib/cloudinary-actions"; // Server Actions: chi tiết + list thật
 import { toListDownloadUrl, type ListDocument } from "@/lib/list-documents";
 
@@ -21,6 +24,12 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
   const [doc, setDoc] = useState<ListDocument | null>(null);
   const [loaded, setLoaded] = useState(false); // đã nạp xong dữ liệu
   const [error, setError] = useState(""); // lỗi gọi API (trống = không lỗi)
+  const [showDelete, setShowDelete] = useState(false); // modal xác nhận xóa
+  const [deleting, setDeleting] = useState(false); // đang gọi API xóa
+  const [deleteError, setDeleteError] = useState(""); // lỗi xóa trong modal
+  const [showUnlock, setShowUnlock] = useState(false); // modal nhập mã (401 khi xóa)
+  const [toast, setToast] = useState(""); // thông báo góc dưới
+  const { unlocked, checking, refresh, logout } = useAuthStatus();
 
   // Nạp chi tiết 100% từ Cloudinary (không dữ liệu mẫu).
   // getCloudDocument null = sai id -> màn not-found; throw = lỗi API -> màn lỗi.
@@ -52,6 +61,43 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
   const handleDownload = () => {
     if (!doc) return;
     window.open(toListDownloadUrl(doc.fileUrl), "_blank");
+  };
+
+  // Bấm Xóa: chưa unlock -> đòi mã trước, rồi mở xác nhận.
+  const openDelete = () => {
+    if (!doc) return;
+    setDeleteError("");
+    if (!unlocked) {
+      setShowUnlock(true);
+      return;
+    }
+    setShowDelete(true);
+  };
+
+  // Xác nhận xóa -> gọi API, 401 giữa chừng -> đòi mã rồi tự xóa tiếp.
+  const confirmDelete = async () => {
+    if (!doc || deleting) return;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const r = await fetch(`/api/documents/${doc.id}`, { method: "DELETE" });
+      const j = (await r.json().catch(() => ({}))) as { error?: string };
+      if (r.status === 401) {
+        setShowUnlock(true);
+        refresh();
+        return;
+      }
+      if (!r.ok) {
+        setDeleteError(j.error || "Xóa thất bại. Thử lại.");
+        return;
+      }
+      setToast("Đã xóa tài liệu.");
+      setTimeout(() => router.push("/list-document"), 600);
+    } catch {
+      setDeleteError("Không kết nối được server. Thử lại.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (!loaded) {
@@ -121,7 +167,7 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
 
   return (
     <main className="fade-in">
-      <SiteHeader />
+      <SiteHeader unlocked={unlocked} checking={checking} onUnlockClick={() => setShowUnlock(true)} onLogout={logout} />
       <div className="lv-container dt-main">
         <button onClick={() => router.push("/list-document")} type="button" className="dt-back">
           <ArrowLeft className="icon" aria-hidden="true" />
@@ -162,6 +208,10 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
                 <Download className="icon" aria-hidden="true" />
                 <span>Tải xuống</span>
               </button>
+              <button onClick={openDelete} type="button" className="dt-btn" style={{ borderColor: "#fecaca", color: "#dc2626" }}>
+                <Trash2 className="icon" aria-hidden="true" />
+                <span>Xóa</span>
+              </button>
             </div>
           </div>
           {/* Meta 4 ô */}
@@ -187,7 +237,24 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
           <span>Tri thức hôm nay – Vững bước tương lai</span>
         </div>
       </footer>
-      <StudyToast message="" />
+      <StudyToast message={toast} />
+      <DeleteDialog
+        open={showDelete}
+        fileName={doc.title}
+        loading={deleting}
+        error={deleteError}
+        onClose={() => { setShowDelete(false); setDeleteError(""); }}
+        onConfirm={confirmDelete}
+      />
+      <UnlockDialog
+        open={showUnlock}
+        onClose={() => setShowUnlock(false)}
+        onUnlocked={() => {
+          refresh();
+          // Vừa đòi mã để xóa -> user đã xác nhận trước đó (hoặc sắp xác nhận) nên mở tiếp xác nhận.
+          setShowDelete(true);
+        }}
+      />
     </main>
   );
 }
