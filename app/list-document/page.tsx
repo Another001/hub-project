@@ -23,6 +23,9 @@ import {
 } from "@/lib/list-documents";
 import { DEMO_VIDEOS, filterListVideos } from "@/lib/list-videos";
 
+// Số thẻ mỗi đợt phân trang thủ công (3 hàng lưới 3 cột desktop).
+const PAGE_SIZE = 9;
+
 export default function ListDocumentPage() {
   const [docs, setDocs] = useState<ListDocument[]>([]); // kết quả từ API theo tag đang chọn
   const [loading, setLoading] = useState(true); // đang gọi API
@@ -39,6 +42,7 @@ export default function ListDocumentPage() {
   const [reopenDelete, setReopenDelete] = useState(false); // 401 khi xóa -> unlock xong tự xóa tiếp
   const [toast, setToast] = useState(""); // thông báo sau upload/xóa
   const [toastTimer, setToastTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [visible, setVisible] = useState(PAGE_SIZE); // số thẻ đang hiện (phân trang thủ công)
   const { unlocked, checking, refresh, logout } = useAuthStatus();
 
   // Nhánh đặc biệt: Loại = Video bài giảng -> dùng nguồn tĩnh YouTube, KHÔNG gọi Cloudinary.
@@ -70,6 +74,17 @@ export default function ListDocumentPage() {
   const results = useMemo(() => filterListDocuments(docs, q), [docs, q]);
   const videoResults = useMemo(() => filterListVideos(DEMO_VIDEOS, q), [q]);
   const hasFilter = q || gradeTag || examTag;
+
+  // Đổi bộ lọc là quay về đợt đầu (tránh treo số cũ khi kết quả ít đi).
+  useEffect(() => {
+    setVisible(PAGE_SIZE);
+  }, [q, gradeTag, examTag]);
+
+  // Danh sách đang hiện (cắt theo đợt) + số còn ẩn.
+  const shownDocs = results.slice(0, visible);
+  const hiddenDocs = results.length - shownDocs.length;
+  const shownVideos = videoResults.slice(0, visible);
+  const hiddenVideos = videoResults.length - shownVideos.length;
 
   // Xóa hết bộ lọc (nút Xóa bộ lọc + nút trong empty state).
   const resetFilters = () => {
@@ -181,8 +196,8 @@ export default function ListDocumentPage() {
             </h2>
             <p className="count-note" aria-live="polite">
               {isVideoMode
-                ? `Hiển thị ${videoResults.length} / ${DEMO_VIDEOS.length} video`
-                : loading ? "Đang tải..." : `Hiển thị ${results.length} / ${docs.length} tài liệu`}
+                ? `Hiển thị ${Math.min(visible, videoResults.length)} / ${videoResults.length} video`
+                : loading ? "Đang tải..." : `Hiển thị ${Math.min(visible, results.length)} / ${results.length} tài liệu`}
             </p>
           </div>
           <button className="primary" type="button" onClick={openUpload}>
@@ -253,9 +268,18 @@ export default function ListDocumentPage() {
               </div>
             </div>
           ) : (
-            <div className="lv-grid">
-              {videoResults.map((v) => <StudyVideoCard key={v.id} video={v} />)}
-            </div>
+            <>
+              <div className="lv-grid">
+                {shownVideos.map((v) => <StudyVideoCard key={v.id} video={v} />)}
+              </div>
+              {hiddenVideos > 0 ? (
+                <div className="more-row">
+                  <button onClick={() => setVisible((v) => v + PAGE_SIZE)} className="outline" type="button">
+                    Xem thêm (còn {hiddenVideos})
+                  </button>
+                </div>
+              ) : null}
+            </>
           )
         ) : error ? (
           <div className="empty-box">
@@ -282,9 +306,18 @@ export default function ListDocumentPage() {
             </div>
           </div>
         ) : (
-          <div className="lv-grid">
-            {results.map((doc) => <StudyDocCard key={doc.id} doc={doc} onDelete={openDelete} />)}
-          </div>
+          <>
+            <div className="lv-grid">
+              {shownDocs.map((doc) => <StudyDocCard key={doc.id} doc={doc} onDelete={openDelete} />)}
+            </div>
+            {hiddenDocs > 0 ? (
+              <div className="more-row">
+                <button onClick={() => setVisible((v) => v + PAGE_SIZE)} className="outline" type="button">
+                  Xem thêm (còn {hiddenDocs})
+                </button>
+              </div>
+            ) : null}
+          </>
         )}
       </section>
 
