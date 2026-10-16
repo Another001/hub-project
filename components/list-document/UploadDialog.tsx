@@ -1,6 +1,6 @@
-// Modal upload PDF (tối đa 4MB do giới hạn Vercel) + metadata đầy đủ.
+// Modal upload tài liệu PDF/PNG (tối đa 4MB do giới hạn Vercel) + metadata đầy đủ.
 // Giao diện theo mẫu thu-vien-toan.html (.lv-dialog). Logic giữ nguyên:
-// validate .pdf + 4MB, FormData title/grade/type/tags, 401 -> báo cha mở unlock.
+// validate đuôi + 4MB, FormData title/grade/type/tags, 401 -> báo cha mở unlock.
 "use client";
 
 import { useMemo, useState } from "react";
@@ -34,8 +34,8 @@ export default function UploadDialog({ open, onClose, onNeedUnlock, onUploaded }
       setFile(null);
       return;
     }
-    if (!/\.pdf$/i.test(f.name)) {
-      setError("Chỉ cho phép file .pdf.");
+    if (!/\.(pdf|png)$/i.test(f.name)) {
+      setError("Chỉ cho phép file .pdf hoặc .png.");
       return;
     }
     if (f.size > MAX_MB * 1024 * 1024) {
@@ -43,7 +43,7 @@ export default function UploadDialog({ open, onClose, onNeedUnlock, onUploaded }
       return;
     }
     setFile(f);
-    if (!title) setTitle(f.name.replace(/\.pdf$/i, "").replace(/[-_]+/g, " ").slice(0, 200));
+    if (!title) setTitle(f.name.replace(/\.(pdf|png)$/i, "").replace(/[-_]+/g, " ").slice(0, 200));
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -69,7 +69,7 @@ export default function UploadDialog({ open, onClose, onNeedUnlock, onUploaded }
         return;
       }
       if (r.status === 413) {
-        setError(`File quá lớn cho server (giới hạn ${MAX_MB}MB). Hãy nén/giảm dung lượng PDF rồi thử lại.`);
+        setError(`File quá lớn cho server (giới hạn ${MAX_MB}MB). Hãy nén/giảm dung lượng file rồi thử lại.`);
         return;
       }
       if (!r.ok) {
@@ -92,22 +92,22 @@ export default function UploadDialog({ open, onClose, onNeedUnlock, onUploaded }
   };
 
   return (
-    <div className="lv-dialog-backdrop" role="dialog" aria-modal="true" aria-label="Tải lên tài liệu PDF">
+    <div className="lv-dialog-backdrop" role="dialog" aria-modal="true" aria-label="Tải lên tài liệu">
       <form className="lv-dialog" onSubmit={submit}>
         <div className="lv-dialog-head">
           <span className="lv-dialog-icon" aria-hidden="true">
             <FileUp className="icon" />
           </span>
-          <h2>Tải lên tài liệu PDF</h2>
+          <h2>Tải lên tài liệu</h2>
         </div>
-        <p className="lv-dialog-sub">Tối đa {MAX_MB}MB, chỉ nhận file PDF.</p>
+        <p className="lv-dialog-sub">Tối đa {MAX_MB}MB, chỉ nhận file PDF hoặc PNG.</p>
 
         <label>
-          Tệp PDF
+          Tệp tài liệu
           <input
             className="lv-file"
             type="file"
-            accept=".pdf,application/pdf"
+            accept=".pdf,.png,application/pdf,image/png"
             onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
           />
         </label>

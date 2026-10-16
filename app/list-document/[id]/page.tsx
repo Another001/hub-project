@@ -5,7 +5,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Download, Eye } from "lucide-react";
+import { ArrowLeft, Download, Eye, Image as ImageIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import SiteHeader from "@/components/list-document/SiteHeader";
 import StudyPdfViewer from "@/components/list-document/StudyPdfViewer";
@@ -111,11 +111,12 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
     );
   }
 
+  const isImage = /\.png$/i.test(doc.fileUrl);
   const meta: Array<[string, string]> = [
     ["NGƯỜI TẢI LÊN", doc.uploadedBy],
     ["CẬP NHẬT", doc.uploadedAt],
     ["DUNG LƯỢNG", doc.fileSize],
-    ["SỐ TRANG", `${doc.pageCount} trang`],
+    ["SỐ TRANG", isImage ? "1 ảnh" : `${doc.pageCount} trang`],
   ];
 
   return (
@@ -130,12 +131,18 @@ export default function ListDocumentDetailPage({ params }: { params: { id: strin
         {/* Thẻ thông tin chính */}
         <section className="dt-summary" aria-labelledby="document-title">
           <div className="dt-summary-top">
-            <div className="dt-badge" aria-hidden="true">
-              <svg viewBox="0 0 32 40" aria-label="Tệp PDF" role="img">
-                <path d="M4 1h16l9 10v28H4Z M20 1v11h9" fill="none" stroke="currentColor" strokeWidth="2" />
-                <text x="16.5" y="30" textAnchor="middle" fill="currentColor" fontSize="10" fontFamily="Arial" fontWeight="bold">PDF</text>
-              </svg>
-            </div>
+            {isImage ? (
+              <div className="dt-badge" aria-hidden="true" style={{ background: "#e6f4ef", color: "var(--green)" }}>
+                <ImageIcon className="icon" aria-hidden="true" />
+              </div>
+            ) : (
+              <div className="dt-badge" aria-hidden="true">
+                <svg viewBox="0 0 32 40" aria-label="Tệp PDF" role="img">
+                  <path d="M4 1h16l9 10v28H4Z M20 1v11h9" fill="none" stroke="currentColor" strokeWidth="2" />
+                  <text x="16.5" y="30" textAnchor="middle" fill="currentColor" fontSize="10" fontFamily="Arial" fontWeight="bold">PDF</text>
+                </svg>
+              </div>
+            )}
             <div className="dt-heading">
               <p className="dt-eyebrow">{doc.grade} · {doc.type}</p>
               <h1 className="dt-h1" id="document-title">{doc.title}</h1>

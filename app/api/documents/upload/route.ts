@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
   }
 
   const file = form.get("file");
-  if (!(file instanceof File)) return bad("Thiếu file PDF (field 'file').");
+  if (!(file instanceof File)) return bad("Thiếu file (field 'file').");
 
   const maxMb = Number(process.env.MAX_UPLOAD_MB || "4");
   const maxBytes = (Number.isFinite(maxMb) && maxMb > 0 ? maxMb : 4) * 1024 * 1024;
@@ -83,14 +83,27 @@ export async function POST(req: NextRequest) {
   if (file.size > maxBytes) return bad(`File vượt quá ${(maxBytes / 1024 / 1024).toFixed(0)}MB.`);
 
   const name = file.name || "tai-lieu.pdf";
-  if (!/\.pdf$/i.test(name)) return bad("Chỉ cho phép file .pdf.");
-  if (file.type && file.type !== "application/pdf") return bad("Chỉ cho phép PDF (application/pdf).");
+  const isPdf = /\.pdf$/i.test(name);
+  const isPng = /\.png$/i.test(name);
+  if (!isPdf && !isPng) return bad("Chỉ cho phép file .pdf hoặc .png.");
+  if (file.type && file.type !== "application/pdf" && file.type !== "image/png") {
+    return bad("Chỉ cho phép PDF (application/pdf) hoặc PNG (image/png).");
+  }
 
   const buf = Buffer.from(await file.arrayBuffer());
-  // Magic bytes PDF: %PDF- (chống đổi đuôi png/jpg thành .pdf)
-  if (buf.length < 5 || buf.subarray(0, 5).toString("ascii") !== "%PDF-") {
+  // Magic bytes chống đổi đuôi: PDF = %PDF-, PNG = 89 50 4E 47 0D 0A 1A 0A.
+  const isRealPdf = buf.length >= 5 && buf.subarray(0, 5).toString("ascii") === "%PDF-";
+  const isRealPng =
+    buf.length >= 8 &&
+    buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47 &&
+    buf[4] === 0x0d && buf[5] === 0x0a && buf[6] === 0x1a && buf[7] === 0x0a;
+  if (isPdf && !isRealPdf) {
     return bad("File không phải PDF thật (thiếu chữ ký %PDF).");
   }
+  if (isPng && !isRealPng) {
+    return bad("File không phải PNG thật (sai chữ ký file).");
+  }
+  const format = isPng ? "png" : "pdf";
 
   const str = (k: string) => cleanCtx(String(form.get(k) ?? ""), 200);
   const title = str("title");
@@ -116,10 +129,10 @@ export async function POST(req: NextRequest) {
     uploaded = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
-          resource_type: "image", // PDF lưu dạng image: console preview được, Admin API trả pages, khớp file cũ
+          resource_type: "image", // PDF/PNG lưu dạng image: console preview được, Admin API trả pages, khớp file cũ
           folder,
           public_id: publicId,
-          format: "pdf",
+          format,
           use_filename: false,
           unique_filename: false,
           overwrite: false,

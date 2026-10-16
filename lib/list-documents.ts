@@ -39,6 +39,8 @@ export const EXAM_OPTIONS: TagOption[] = [
   { label: "Đề cương", tag: "de-cuong" },
   { label: "Tài liệu bổ sung", tag: "tai-lieu-bo-sung" },
   { label: "Truyện", tag: "truyen" },
+  { label: "Sơ đồ tư duy", tag: "so-do-tu-duy" },
+  { label: "Hệ thống kiến thức", tag: "he-thong-kien-thuc" },
   { label: "Video bài giảng", tag: VIDEO_TAG },
 ];
 

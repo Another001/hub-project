@@ -44,11 +44,13 @@ function toDTO(r: RawResource, cloudName: string): ListDocument {
   const fileName = r.public_id.split("/").pop() ?? r.public_id;
   // Link xem phải đúng resource_type nơi file đang lưu (image hay raw).
   const fileUrl = `https://res.cloudinary.com/${cloudName}/${r.resource_type}/upload/v${r.version}/${encodePublicId(r.public_id)}.${r.format}`;
-  // Ảnh preview trang đầu: chỉ PDF lưu dạng image mới transform được
-  // (pg_1 + resize + jpg, CDN tự render lần đầu rồi cache). PDF raw cũ -> null.
+  // Ảnh preview: PDF trang đầu (pg_1), PNG resize nhẹ (vốn đã là ảnh).
+  // Chỉ resource image mới transform được; PDF raw cũ -> null (FE hiện icon).
   const thumbUrl =
-    r.resource_type === "image" && r.format === "pdf"
-      ? `https://res.cloudinary.com/${cloudName}/image/upload/pg_1,w_600,f_jpg,q_auto/v${r.version}/${encodePublicId(r.public_id)}.jpg`
+    r.resource_type === "image" && (r.format === "pdf" || r.format === "png")
+      ? r.format === "pdf"
+        ? `https://res.cloudinary.com/${cloudName}/image/upload/pg_1,w_600,f_jpg,q_auto/v${r.version}/${encodePublicId(r.public_id)}.jpg`
+        : `https://res.cloudinary.com/${cloudName}/image/upload/w_600,q_auto/v${r.version}/${encodePublicId(r.public_id)}.${r.format}`
       : null;
   // Ưu tiên r.pages (Admin API với pages:true), fallback context.custom.pages.
   // PDF dạng raw cũ không trả pages -> về 0 + warn để dễ debug.
@@ -168,18 +170,21 @@ async function fetchAll(tag?: string): Promise<RawResource[]> {
   return out;
 }
 
-// HÀM 1: Đếm số tài liệu. Truyền mảng tag để đếm theo AND, không thì đếm all (chỉ PDF).
+// PDF + PNG đều là "tài liệu" (đường all). Đường có tag giữ mọi format như cũ.
+const DOC_FORMATS = ["pdf", "png"];
+
+// HÀM 1: Đếm số tài liệu. Truyền mảng tag để đếm theo AND, không thì đếm all (PDF + PNG).
 // FE: const n = await countDocuments() hoặc countDocuments(["lop-6"])
 export async function countDocuments(tags: string[] = []): Promise<number> {
   config();
   const wanted = tags.filter(Boolean);
   const all = await fetchByTags(wanted);
-  return wanted.length ? all.length : all.filter((r) => r.format === "pdf").length;
+  return wanted.length ? all.length : all.filter((r) => DOC_FORMATS.includes(r.format)).length;
 }
 
 // HÀM 2: Liệt kê tài liệu (lọc sẵn theo từ khóa/môn/lớp/loại + mảng tag).
 // tags: mỗi dropdown 1 tag, AND bằng intersect public_id phía server (không dùng mảng tags trong response).
-// Không truyền tag nào thì đường all nhưng CHỈ lấy PDF (bỏ ảnh lung tung trong cloud).
+// Không truyền tag nào thì đường all nhưng CHỈ lấy PDF + PNG (bỏ file lung tung trong cloud).
 // FE gọi mỗi khi đổi dropdown, ô search thì lọc tiếp client-side.
 export async function listDocuments(opts?: {
   q?: string;
@@ -195,7 +200,7 @@ export async function listDocuments(opts?: {
   // Lọc AND tag bằng intersect API, còn q/subject/grade/type lọc trên DTO.
   const docs = fetchByTags(tags)
     .then((all) =>
-      (tags.length ? all : all.filter((r) => r.format === "pdf")).map((r) => toDTO(r, cloudName))
+      (tags.length ? all : all.filter((r) => DOC_FORMATS.includes(r.format))).map((r) => toDTO(r, cloudName))
     )
     .then((all) =>
       all.filter(

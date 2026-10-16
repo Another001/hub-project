@@ -70,7 +70,7 @@ export default function ListDocumentPage() {
     setQ(""); setGradeTag(""); setExamTag("");
   };
 
-  // Bấm "Tải lên PDF": chưa unlock -> mở modal nhập mã trước.
+  // Bấm "Tải lên": chưa unlock -> mở modal nhập mã trước.
   const openUpload = () => {
     if (!unlocked) {
       setReopenUpload(true);
@@ -135,7 +135,7 @@ export default function ListDocumentPage() {
           </div>
           <button className="primary" type="button" onClick={openUpload}>
             <FileUp className="icon" aria-hidden="true" />
-            Tải lên PDF
+            Tải lên tài liệu
           </button>
         </div>
 

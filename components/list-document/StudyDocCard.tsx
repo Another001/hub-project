@@ -6,7 +6,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Download } from "lucide-react";
+import { ArrowRight, Download, Image as ImageIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { ListDocument } from "@/lib/list-documents";
 
@@ -17,7 +17,10 @@ export default function StudyDocCard({ doc }: { doc: ListDocument }) {
   const showThumb = Boolean(doc.thumbUrl) && imgOk;
 
   const category = doc.grade ? `TOÁN · ${doc.grade}`.toUpperCase() : "TOÁN";
-  const meta = doc.pageCount > 0 ? `PDF · ${doc.pageCount} trang · ${doc.fileSize}` : `PDF · ${doc.fileSize}`;
+  const isImage = /\.png$/i.test(doc.fileUrl);
+  const meta = isImage
+    ? `Ảnh PNG · ${doc.fileSize}`
+    : doc.pageCount > 0 ? `PDF · ${doc.pageCount} trang · ${doc.fileSize}` : `PDF · ${doc.fileSize}`;
 
   return (
     <article className="card">
@@ -26,7 +29,7 @@ export default function StudyDocCard({ doc }: { doc: ListDocument }) {
         <button className="thumb-wrap" type="button" onClick={open} aria-label={`Xem ${doc.title}`} style={{ marginBottom: 14 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={doc.thumbUrl as string} alt={`Trang đầu ${doc.title}`} loading="lazy" onError={() => setImgOk(false)} />
-          <span className="thumb-time">{doc.pageCount > 0 ? `${doc.pageCount} trang` : "PDF"}</span>
+          <span className="thumb-time">{isImage ? "PNG" : doc.pageCount > 0 ? `${doc.pageCount} trang` : "PDF"}</span>
         </button>
       ) : null}
       <div className="card-head">
@@ -34,12 +37,18 @@ export default function StudyDocCard({ doc }: { doc: ListDocument }) {
           <span className="category">{category}</span>
           <h3 className="lv-h3">{doc.title}</h3>
         </div>
-        {/* Icon PDF đỏ đúng mẫu */}
-        <svg className="pdf" viewBox="0 0 32 40" aria-label="Tệp PDF" role="img">
-          <path d="M4 1h16l9 10v28H4Z M20 1v11h9" fill="none" stroke="currentColor" strokeWidth="2" />
-          <rect x="7" y="21" width="19" height="12" rx="2" fill="currentColor" />
-          <text x="16.5" y="30" textAnchor="middle" fill="white" fontSize="8" fontFamily="Arial" fontWeight="bold">PDF</text>
-        </svg>
+        {/* Badge loại file: PDF đỏ đúng mẫu, PNG icon ảnh */}
+        {isImage ? (
+          <span className="flex h-11 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600" role="img" aria-label="Tệp ảnh PNG">
+            <ImageIcon className="h-5 w-5" />
+          </span>
+        ) : (
+          <svg className="pdf" viewBox="0 0 32 40" aria-label="Tệp PDF" role="img">
+            <path d="M4 1h16l9 10v28H4Z M20 1v11h9" fill="none" stroke="currentColor" strokeWidth="2" />
+            <rect x="7" y="21" width="19" height="12" rx="2" fill="currentColor" />
+            <text x="16.5" y="30" textAnchor="middle" fill="white" fontSize="8" fontFamily="Arial" fontWeight="bold">PDF</text>
+          </svg>
+        )}
       </div>
       <p className="card-desc">{doc.description}</p>
       <div className="meta">{meta}</div>

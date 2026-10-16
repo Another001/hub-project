@@ -1,7 +1,6 @@
-// Khung xem trước PDF thật bằng react-pdf, giao diện theo mẫu chi-tiet-tai-lieu.html:
-// toolbar (tên file + zoom tròn + toàn màn hình), canvas xám, pagination.
-// Logic giữ nguyên: đọc PDF thật từ fileUrl, zoom 80–130%, chuyển trang trước/sau,
-// đo khung chứa để vừa mobile, lỗi tải -> nút mở tab mới.
+// Khung xem trước tài liệu, giao diện theo mẫu chi-tiet-tai-lieu.html:
+// PDF thật bằng react-pdf (zoom 80–130%, chuyển trang), PNG hiện ảnh gốc.
+// Logic giữ nguyên: đo khung chứa để vừa mobile, lỗi tải -> nút mở tab mới.
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -41,6 +40,46 @@ export default function StudyPdfViewer({ fileUrl, title }: { fileUrl: string; ti
       /* bỏ qua */
     }
   };
+
+  // Nhánh ảnh PNG: hiện ảnh gốc trong cùng khung reader (không zoom trang/phân trang PDF).
+  if (/\.png$/i.test(fileUrl)) {
+    return (
+      <section className="dt-reader" ref={readerRef} aria-label="Xem ảnh tài liệu">
+        <div className="dt-toolbar">
+          <div className="dt-filename">
+            <span className="dt-pdf-small" aria-hidden="true" style={{ color: "var(--green)", fontWeight: 800, fontSize: 12 }}>PNG</span>
+            <span>{title}.png</span>
+          </div>
+          <div className="dt-controls">
+            <button onClick={toggleFullscreen} className="dt-circle" type="button" aria-label="Toàn màn hình">
+              <Maximize className="icon" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+        <div className="dt-canvas">
+          {error ? (
+            <div className="dt-state">
+              <p className="lv-error">Không xem trước được ảnh</p>
+              <p>{error}</p>
+              <div className="dt-state-row">
+                <a href={fileUrl} target="_blank" rel="noopener" className="primary">
+                  Mở trong tab mới
+                </a>
+              </div>
+            </div>
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={fileUrl}
+              alt={title}
+              style={{ display: "block", maxWidth: "100%", height: "auto", margin: "0 auto", background: "#fff", boxShadow: "0 7px 24px #1b2d3b20" }}
+              onError={() => setError("Link Cloudinary chưa đúng hoặc file chưa public. Kiểm tra lại Secure URL.")}
+            />
+          )}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="dt-reader" ref={readerRef} aria-label="Trình đọc tài liệu PDF">
